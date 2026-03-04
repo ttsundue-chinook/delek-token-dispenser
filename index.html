@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Delek Hospital — Token Dispenser</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Tibetan:wght@400;700&family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
     --primary: #1a3a5c;
@@ -356,20 +356,26 @@
 
   /* PRINT STYLES */
   @media print {
+    html, body { margin: 0 !important; padding: 0 !important; background: white !important; }
     body * { visibility: hidden !important; }
     #print-area, #print-area * { visibility: visible !important; }
     #print-area {
-      position: fixed !important;
-      left: 0 !important; top: 0 !important;
+      display: block !important;
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
       width: 72mm !important;
       margin: 0 !important;
-      padding: 3mm !important;
-      font-family: 'Courier New', monospace !important;
-      font-size: 11pt !important;
+      padding: 2mm !important;
       background: white !important;
     }
+    /* Hide browser headers/footers */
+    @page { margin: 0 !important; }
   }
-  @page { size: 76mm 80mm; margin: 0; }
+  @page {
+    size: 76mm auto;
+    margin: 0;
+  }
   #print-area { display: none; }
 
   /* PRINTER MODE CARDS */
@@ -688,13 +694,12 @@
   }
 
   // ===== TOKEN RECEIPT HTML =====
-  const LOGO_URI = "data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAC0AdoDASIAAhEBAxEB/8QAHQABAAICAwEBAAAAAAAAAAAAAAcIBgkDBAUCAf/EAEoQAAEDBAECBAMEBgcFBAsAAAECAwQABQYRBxIhCBMxQSJRYQkUMoEVQlJxgpEWIyQzYnKhFzRDkrGDssHCJSY3U1RzdpOitNH/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AuXSlcUuTHiRnJUt9qOw0kqcddWEoQB6kk9gKDlpVeuTvFvxpirjsOw/ecsnoBH9hIRFCgBoF5XqDv1QlY7H88Hs3jis7r6k3njyfDZ0OlUS5okKPz+FTbYH86C3tKiPjrxG8TZstmNEyNFqnu9ITEuqfu6ypXYICiehSt9tJUfapbSQpIUkggjYI96D9pSlApSlApWG8lco4Jx1FD2W5FFguKG24oJckODetpbTtRHf11r61XS++OKzs3BSLHx5OnQ9fC7MuaIzhP1QltwD2/WoLe0qs+J+M3ja5PpYvtqvdh2nZeU0mQ0k/LaD1/wD4VPmG5hi2Y28z8Wv9vvEdJ6VqivhZQdb0oeqTojsQD3oPcpSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlArCuT+MMV5IZYj5Wm5yYjA+GKzcHWGSd76lIQoBSvkTvXtrvWa0oK9XbwfcPzI624rV9tq1HaXI8/qKfppxKhr8t/WopznwS3WO0/JwzMY84ju1DuUfyVa9x5qCQT6/qpH/Wrt0oNQ2cYZlOEXc2nK7HMtMv1Sl9HwuDt3QsbSsdx3SSKkjgfxCZ3xtLjWxD7t+sBWlJtclZWUDsNMK9UH00kbT9O+62K5xiON5tYH7FlFpjXKC8CCh1PxIP7SFDuhQ9lJINUn5D4QufA/Jtn5GtdseynCbbOblvo6Qp+GlKgdOD0OvVLnpsDq6exIXlx24O3axwrk/bJlrdkspcXDmJSHmCR+FYSSAR++u/XiYNllgzbGYuR41cWp9ulJ2hxHYpV7oUPVKh7g9xXt0CuOS158d1kuON+Ygp621dKk7Gtg+x+tclKCEbx4WeIrtLemz7deX5jy+t2S7d33HXD81KWo7/ADrBst8FODzUOOY1k96s7yjtKZKUS2UfQJ0hX81n/wAKtPSg1rcueGPkrAm3J8eGjJLQgbVKtqVKcbHbutn8Q9T3T1AAbJFRJi+Q3zF7yzeMeusu1z2SCh+M6UK1sHR1+JJIG0nYPuDW4Sq/eIrwzY1yGxJvmMtxrFlPT1BxCemPLUPZ1I9Cf2wN/MKoODwhc6ZJykxKs+RY88uXb0Au3iK2Exlb/ClwE/C4dH8OwdE6TViKqp4LcniYJ994XzW1KxrLEzVyWEyAEieFgdgsdlKAToEEhSddJOjVq6BSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBSlKBXy62260tp1CXG1pKVJUNhQPqCPcV9UoK45jxtlPDl7lcgcJRjLtbii7esRUpRafRvalxwPwrA3pIBI7dIUPgqYeKuQsb5IxlF8x2So9J8uVEeATIhu+7bqN/Cex+h9QTWW1DPKPFd5h5GvkjiCTGsuYJG50JzaYV5R7oeSNAL9wrts+pB+IBM1KwHh/k625/DlQ3oj1lye1q8q8WSUdPxHPQkenW2T6LHrsb0e1Z9QKUpQKUpQYFzLxTjHKFmajXltyLcoZK7ddIx6ZENz2KSNbTvRKT27A9iARHnG/JeU4DlDHGPNhQh5ZDdjygAiLcUegQ6s9ku9vfW96IB0pdgK8LO8Qx3OMbkY9k9sZuEB8d0rHxNq9loV6pUPYjvQe7Sq+WPI8u4JurGOchzHr7x886GLTk6tqft+z8DMz/D+qFjsND2OkWAjvNSGG5Ed1DrLqQttxCgpK0kbBBHYgj3oPulKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKUCvDyvMMUxNDK8nyS02YPnpa++y0M9Z+nURuo85NzjNr7OuGGcNQYsu7xQWrle5SgIdscI/uwSCHH9HfTohOx1DvqqWYnxrnHIHiNcw/MHplwuESef09LdeU50MIVtZC9+ih2TrX4hoCg2ZUr8QkISEpACQNAD2r9oFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKVgXMvLWHcUWdiflEp4vSioRIUVAW/IKfXpSSAANjaiQO49yBQZ7XWRcIK7ku2omx1TW2w6uOHAXEIJ0FFPqAT6E1UznHxc2l7AIY4tlPt3q4qWiSqZF6XbcgJT30SUlair4SCpI6VfSu39nOxKnWbNsruU6VOn3CexHeekOlxay0hSuoqPck+d3JPsKC2NdO93S3WS0S7vdpjMKBDaU9IfdVpLaEjZJNdyqF+MvmpnKOQmcDiOPOYjZJyBdkML0bg6hY8wbBB6UDqSBsbVs+ySAtVynxhCzV2JlmO3BzHM0hM7tt7jo0vRGw28g9nGz6aUDrZ16kFxNyHdbxdH8KzqyrsWa29ouPNIQoxJzKSkfeYznopBKk7TvaSdH0NSNEdZfitPx1JWy4gLbUn0KSNgj8q+9DqCtDYGgaD9r4feajsLffdQ002kqWtaglKQPUkn0FeNnmU2fCcQuOUX5/wAi329rzHSPxKOwEoSPdSlEJA+ZFUdh8qZL4h+ecbxK7Oqt+HyLglw2Zk7bebZCnT5x/wCIVBGtH4R7AHuQvrabhCu1qiXW2yESYUxhEiO8j8Lja0hSVD6EEGuzX4hKUICEJCUpGgANACv2gV5GPZPj2QyLjHsd5hXF22SDGmpjuhfkOj1SrXv6/mCPUGqxePTlfN8RlwMMx9abXbrrALz9wZc/tDvxlKmk6O2wABs+quvQI0d118K/Kb3FvJ8abJc/9B3IpiXVBHo2T8Lo+qCd/wCUqHvQbNbtb4F2tsi2XSGxNhSWy2/HfbC23EH1SpJ7EVBpteUcBzRIsDFwyXi9av7RbEBT82xbJ24z6qdZ7/Ek7KR39iTPLa0ONpcbUlaFAKSpJ2CD6EV1WrrbXrw/Z2p8Zy4x2kvPxUuAuNIUSEqUn1SDo6366OvSgWK6QL5ZYV5tchMmBOYRIjPJBAcbWAUq79+4IruV+JASkJSAABoAe1FKSlJUohKQNkk9gKD9pVQOV/GObHyIbbhNott8x+F1NSpLy1pVLc77LC0nSUA60opV1d9dtGs8xfxe8RXO3NvXeXc7FKI/rI8iEt7pP0U0FAj69j9BQWDJAGydAV4tjyvHr5ernZ7PdY8+Xaw399Ec9aGSvq6UFY+Hr+A7TvY7bA2N6/8AxUc+XnPMunWjE8kmN4UhtDbLMcLjiXtH9Yp0EJWoFSlJ6FfDpIOvczl9m2hI4xyVYSOo3rRPuQGW9f8AU/zoLUUpVY/E94oGcDuczDcKiomZFH6UypkhG48Qkb6Up2C44AR/hG+/UQUgLOV8vONstLeecQ22hJUtajoJA7kk+wrF7RemMe4ohZDkt0deag2duXcJrqNrX0tBTjhSkep7nSR76AqgHiK8ROTcpSXbVby/ZMWQs+XBQ5pySPZT6h69u/QNpB/aIBoNkVumw7lAYn26XHmQ5DYcYkMOBxt1BGwpKhsEEe4rnrpWG2xbPY4NpgsNsRYcdthlttISlCUJCQAB2A0K6OeZTZ8KxC45Rfn/ACLfb2vMdI/Eo7AShI91KUQkD5kUHsPvNR2FvvuoaabSVLWtQSlIHqST6CuG03CFdrVEuttkIkwpjCJEd5H4XG1pCkqH0IINUKh8qZL4h+eMbxK7Oqt+HyLglxVmZO23m2Qp0+cf+IVBGtH4R7Dfc39QlKEJQhISlI0ABoAUH7SlYTy7ylh3F1i/SeU3ENuuJUYsFnSpMoj1CEb9O42o6SNjZFBm1Kw/hjNHeQ+N7XmLtpctP6RLym4ri+spbS8tCFb0N9SUhXp79tjRqLfHHyNk/H/Htq/opczbZt0nKYckIQkuJaSgk9BO+k76e4Gx8xQTBk2cYtjlzgWm63iO1dLi8hmHAQeuQ+pSgkdLadq1sjaiAkDZJABNZFWvrwFQH8n8QUu/3kyLk/b7W9L+9yVKdUH1KbbSVLO/iKVr1s77H5VsFoFKVV3xZ+JNnEETMIwWQl7IlJLcueggogb9Up+bv+if39gFnmJDD5cDD7bpaWW3OhYV0KHqk69D3Hao35Hy65XHLIvGGFPrRe5jZeu1ya6VCyw/dw7P98vYS2nR7nqPYd6F8I88ZhxWi9tWwM3Jm6pU4puYpSg3KI0H/mo/MH8Wh3GqvJ4V8LkY3x23kV9fVOynKem6Xaa6ep1ZWOptsq+SEq9PQFStUEh2CwwcVxZFmxuC001FaV5DS1n+tcOyVOL7kqUo7Us7JJJOzXg8TcdWrBIdwlJDUvIL1JXOvVy6OlUqQtRWrpHcpbBUrpRvsDs7JJOb1F/iM5htXEGIt3F9hM67TlKbt0Lr6fMUkDqWo+oQnY2R7kD3oJDu92ttoZYduc1mIh+Q1FZLiteY66sIbQPmSpQGq7tU18G97yHl3me957nFxVcpFhhhFujlIDENUhShtpHonSW1J36kHuSauVQKUrycqyXH8Vtarpkl5g2mEFBPnS3ktpKj6Ab9T9B3oPWroXW9Wm1SYMa43GNFfuD/AN3htOOALfc1vpQPVR0Ce3oK+YF3h3qw/pXHJ0K5svNFcV5l4LZcOvh+JO+29brVjknI+Z3TlSNmuSzZEq8224oktsP9SUR1NOBQaSg/3aQU61/PZ2aDa/SupZp7N0s8K5xiCzLYQ+2Qd7StIUP9DUV+JbnG1cPWNhCYn6TyG4JUYMIkpQEg6Lrih6JB9h3Uew0NqASrNuNvhSIkeZOjRnpjpZituupQp9wJKulAJ+JXSlR0PYGu1VI/Bvcsl5Y8QF0z7Mriq5OWaApUdC1EIiuvEIQGm/woSEJdB176J2STV3KBXTvl1ttjtEq73eazCgRG1OvvvK6UoSBskmsY5m5FsvF+CysovXU4EKDMWMggLkvKBKW07/cST7AE+1VL4JzbJuffEpbpOYygqz2Vt26w7O2P7KytHShs9J/EoKcCutWzsdtDtQXnHcbFKUoFKUoFKUoMY5Tziy8dYPcMsvq1/dYaB0tIG1vuKOkNpHzUdDfoBsnsCa1pciSuSeVb9M5DuGO3ybFlr6GX48J5yKw2kkJabWAUgJ79ge6ionuTUzfaOZLc5HItjxIvFNrhW1M1LQKgFvOrWkqV30rSWwB27dS+/c1lHh58T+CYfwzZsdysXIXS2LMQNw4nWFsle0ObKgnQCtEb6vhJAOxQUtq/H2b6UjiC/q0Oo39YJ+gjsf8A9NQH408qw3PczsWaYbfmrixLtpiSY/lqbejuMuKO1pVogKDoA7aPQdE+0tfZrZC2q15bii+lLjT7Nwa+LusLSW19v8PQ33/xfzC4LiSptSQopJBAI9RWojkfHLpiWeXrG7ytbk6BMcaddX6vd9hz1P4gQr1P4q28VR37RvCvueT2LPYrKg1cWTAmqGukPN/E2T77UgqHy02PT3Cb/BDnH9MODYEGQrc7Hl/ot0EAbbQkFlQ7+nllKfbuhVTnWvX7P7Mv0BzG9jb7gTFyKKWRsH+/aBW339vh8wfvUK2FUFaPtFrjJi8LWuCw4pDc29tIfAHZaEtOqCT/ABBJ/hqrfg4koi+JXD3XCAFPvt+nuuM6gf6qFXB8d2LSMk4Ely4iXFvWOY1cihGvibAU2ve/YJcKv4a164leXsdyu0ZBHbDj1snMzG0FWgpTTiVgb9u6aDcJUA+KzxCNcThjHbDCbn5PMY88eeD5ERolSUrVr8aiUnSAfYkkdgqdLNcYd3tEO6299EiHMYRIYdQoFK0LSFJUCOxBBFQ9yDwFac/53i53lLrUmyQrYyw3bEk7kyEOOKJd7a8sBSfhB+I73oDSgjXgzh+w8v8ADNxzDPkXO45fkanx+lZzquqP0rPlKYSNBLY0k61ojaR8OhVSMY48yrJORVYFaLcX7y3KcjPp2fLY8tfS4tatfChJHc/uA2SAdkPiA5Vs3DmBJujsVMia+fu1qgI+FLiwn31+FtI1vX0A9RVZPB7zziWOXTJIWe+VbZ+Q3VdyN5DRLa3HCAWV9IJQkK2oK/COpWynQJCYPFHn+Q8J8N49Z8UZddkvtJtaLs+Qv7qGmkgKIP4nVgEgnY+FRPtusXg4z662bxD21Vwurz7WRrVBuC5T6lKeWsEtKJJ7r80IAJ2dKUB61cvxADEM88PGWvNXG3XaExaH7hFfjSUuJS8y2pxtSVJP7SQPqCR71Vnwd8B5FkWVWPkS+NKtmPW2S3OhhwEPTnG1BTZQPZvqAJUfXWgDvYC/1Vp525BvXI+ZucE8UXGKie6hz+kF2W70txWkdlsoI2SrZAV0gkE9P7fTIPixy694TwZfL3jy/JnnyoyH9bLAdWEKWP8AEASAfYkH2rWriuUZBi2RtZHYLtJgXZoqKJTatq+IEK3vYVsE73ugmjn3wy3LinAG8sVlLN6QJjceQw3C8nygsK0vqLh6h1BKdAb+LfoDXrYv4NuQLxZrRdJN9sdsTNZD0mO/5qnowUNpGkp6VK1rY6k6PbvUdZNz7yXlWGXHEsru0a+W2cG9iTDbQ4wpCgpK0LaCDvYH4uofTud398O3Klp5XwJu8QWFQ50NQjXCGpXUWXQkEEH9ZCh3B/ePUGg1y834E7xnyVccOcmLnfckMKTKUz5Ye62ULKkp2e3UpQ9T6fOrN/Zo3RxTGbWVZT5aFRJTY132oOpX3+XworDvtGrI7D5Zst8AQI9xtCWgR+IuNOL6t/wrbri+znuTsbma7W3zNMTLI4SjQ+JaHWik79ewK/5/QUF/q1M85tPM81ZuiQlSXP6QTier1O31nf573uts1a3/AB14w7YOf7jPAP3a+RmZ7J6CAD0+WtO/QnqbKv4hQWvbkryTwPqfbeclvOYMpK19RWtx1uKQvZ7kq6kEH33Wtipn4p8ROW4BxtccEjW+33G3yEPJiOSOoLiF0Hq1o6UnZKtH3J76OhDFBuGxW5M3nGLVd4zgdYnQmZLawdhSVoCgd++war19otcZMXha2QmHFIbm3tpD4A7LQlp1QSf4gk/w1lXgozNnLeB7RFU4gzrFu2SUJBHSlH90e/zbKO/psK9PQdLx24tIyTgSXLiJcW9Y5jVyKEa+JsBTa979glwq/hoKe+DiSiL4lMPdcIAL77fp7rjOpH+qhWzytPeJXl7HcrtGQR2w49bJzMxtBVoKU04Fgb9u6a282a4w7vaId1t76JEOYwiQw6hQKVoWkKSoEdiCCKDt1ql8RF3uV55vzF653B+cuPeZUVhbit9DLby0NoSPZISBoCtg/IuaZHebrJwHittt+/JIaul6dG4djSRvaj6OP6/C0N6JBVoDRwvEfCLxlBjl7K3LrldzeV5kmTJluMJW4fxEJbUFAE7PxKUe/rQVqxjxW8j4zi9pxuyW7HGIFrhNRGfMiuLWsIQElSj5mtqIJOgB3rDucuZsn5e/QiskiW6Mq0tOoR9zQtKXFOKBUohSjrshA1/hJ99C42ReGTgO6yZGLWuG7Zb8mMmV/Y7o86+00VdIWUOrWnpJBHcd++j22OnxV4QcDxiQmflkt3LZiFEoadb8mKO50S0CSo612Uoj6UGC/Zr2Sc29l+QPQnm4brcaNHkKQQhxQU4VhJ99fDv94q5tcMKLGhRGokKOzGjMpCGmmkBCEJHoAB2A+grmoKxeOfmW8YNa4WFYtJTEul4jrdlzEOaejR99IDevwqWQsdfqAk67kFPRwbhPEeSfCBj8K1RYUK8usKms3FoAqVMClJWHVeqgdFBBPw6GtdIFQX48l3JXiMuqZzZTHRCiJgkj8TPlAkj/ALQuj8qkfwic3WvH+GMmxK8PoZnWGFLuVrSrSRJbIK1NAk6Kw4onXuF9t9JoKguoLTq21FJUhRSSlQUO3yI7H94q8n2ffKZu1hkcZ3iStc22IVJtal7PXG2OtvZ/YUoaH7KtDsmqvPcQZX/sSi8ssIakWZ6U6y603susNpX5YeV210lwLSflpJ77OsZ48ym44Tm9oyu1H+1W2Sl5Kd6DifRaCdHQUkqSfoaDbzVAvtGbjJf5jtFtW4r7tEsja22yOwWt13qUP3hKB/DV6sUvlvybGbbkNqd82DcYrclhWtEpWkEbB9D37j2NUz+0ixaQzlGN5o2lxUaTEVbXj26ULbUpxH12oOL/AOSg7P2aElCLtnMQkdbrEJwDXslTwP8A3xV1q1reCLKmcX8QNqRJW23HvLDtrW4tfSEleltj6kuNtp1/i/KtlNBHfPPLeO8SYkbtdiJVxkBSLdbkL05KcH/dQNjqXrtsepIBpp4gsA8QmYSoebZVYJl0jy2QuNCtgL/6OQvRDRZSOpJ9Nq0dkd1bqP8AxK5vds65gvs+5LcSzDluQoUdR7MMtrKQAPmdFR+pNXwxTPL3y7wEu8cb3S2WzK3mBHd+9krTCkjXmAgJOiRsoJSR8STo+lBTPw98bZReOYBg12vkrFWopTIusUXL7vIcT0ghtCEq2pwhQB7fAN70QAcb8TmLWvC+dMmx2yxhGt8d5pxhkKJDaXWUO9I330OvQryOUcPzjj7NnYuYMy4t5W6ZaJnnlwyCVk+eh0HaiVAnf4gfXRqRfDlhmTc382s5Fksh+fCt7zMu8T3gNu+WAGmvTSlK6Egj9kKO962F+eI7bJs3FWJWiaEiVBskOM8EnY60MISrW/qDVMPtIIshHL9hmqbIju2BDSF7GitEh8qH5Baf51feqafaW2p4pwq9oZ2yky4rrnb4VHy1IHz7gOfyP5hxfZm+X95z3f8AedFv6f3bk7/8KuhVC/s4r4IfKF+sC0/DcrUHkq6v12XBoa+qXFn8vr2vpQU2+0uuMlLWE2lLihGWZkhxGuyljykpP5BS/wDmqP8A7PCShjniW0ojcixSG0/v81lX/RJqXftHcWkXHBMfyyOlxabPLcjyACNJbfCdLP7lNpT/AB1U/wAPmUtYZzTiuRSFIRGjz0tyFrX0pbZdBacWT/hQtR/Kg2uUoCCAQdg9waUClKUClKUFWvGbwJlvJOWWbKcNbjSn24ibfMjvSUtdKQ4pSHU9XYgeYvq770lOgTuo1snglzaRBcdu+W2GDJ7+Wywh18Ht26lEJ6e+/QKq99KDUBm2NXbDssuWMXxgMXG3Pll5IO0kjuFJPulQIUD7gg1nXhVzdWB83WK5uAmHNc/R0wD18p4hPV/CroV/DV3vEpwFZeXokecxKbs+RxB0NT/J6w81/wC7dAIJA9QfVPf1BIqAfAnxQ1I5IvuTX9LTruJyjCjsgkj738SVOEEDskA637q3raaC8tRL4u8STl/AWRxUNJcl25kXOKfL61JWx8Sukeuy35ie37X5VLVfEhluQw4w8gLacSULSfQgjRFBp+xK9y8aym15DAJEq2y2pTXxEbUhQVokex1o/Q1t3sF0iXuxQLzAdS7Enxm5LC0nYUhaQpJ3+4itSvJWNu4fyBfsXe8wm2T3Y6FOa6loSo9Czrt8Sek/nWxPwXXt+9+HTG1yVhTsIPQtgfqtOKSgfkjpFBLV3t8O7WmXariwiRDmMLYkNLAKVtrSUqSQfUEE1qZ5XxGTgfI18xGWorXbZSm0LPq42QFNr/iQpJ/OtuFVI8f3G8OYbHyUUvIixXmrffFM/jTGUv4HRvttJUpPodlafYUGceA/KLvkHB7EC6wpSE2aQqHDluIIRJY9U9J0AegkoOt66R71P9efjUG1WzH7fb7GwyxbI8dCIjbI0hLYSOnX5V6FBD/ia4Qh8yWa3JTdlWq62tThiPlvzGlJc6etC07Hr0J0R3H1qnWQ+FHmq1zhHi4/DvLRTsSINxaDe9ntp1SFb9/w67+vrWyWlBUzw/eEWDZX2Mg5PVGukxICmrM38cdpWz3dV6OnWvhA6R331VbFtCG20ttoShCQAlKRoAD0AFfVKDzcosNoyfHpuP36EidbJzRaksLJAWk/VJBB9CCCCCAQd1FDnhY4MUz0JwxxCta603WX1fv7ukf6VNNKDXh4s/Dw1xbHjZPi8mZNx2S95LzcgBbkJw7KQVADaD3AJAIIAJJIrN/s1rPcjecuv4kON2xMdmGWe3S88VFYV89oSCPl/Wn5VcPMMeteV4vccbvUcSLfcY6mH0eh0fcH2IOiD7EA1HXhk4eXw7i90tT98Td37hN+8F1EctJQgJCUp0VEk9iSd++vbZCL/tILAmXx1jmRojrW7brmqMpxIJCG3mySVa7a6mkDZ9yB7963eDu9/oLxF4q6uQllmW+5Cc6laC/NbUhCfzWUa+oFXv8AFLjv9J+AcutqUOLdagmYyGxtRWwQ8AB776Na+taw8aur9iyO2XuMkKft8tqU2CdAqbWFgfzFBuIqO+ZeG8L5YFrOVMzQ7bFqLDsR/wApRQopK21bBBSrpHtsd9EbNZ3aZrFytcS4xVhbEphDzSgdgpUkKB/ka7NBjmKYLiOLYsMYsVggxLSWy25H8vqDwI0rzCrZWT7lRJNa8vFFwjdOKsmfuMRhK8TuExSLY8HetTW09YZXvuCB1AE76gjfrWzCsL5vwSLyRxleMUkdCXpLPXDdV/wpCPibV+7qGj9CR70FaPs9MHzi2TrjmckG34vc4gZQy8j4py0q2hxA9QlPxjqPY9R1v1Fwbvb4d2tMu1XBhEiHMYWxIaWAUrbWkpUkg+oIJrC/DzeEXnhvG1/dkRJEKGm3S4yW/LDEiP8A1LiOn20pB7fLVZ9Qaj+V8Qk4HyNfMRlqK122UptCz6uNEBTa/wCJCkn86vj4D8ou9/4PYgXWFKQmzyFQ4ctxBCJLHqnpOgD0ElB1vXSPesH8f3G8OYbHyUUvIjRXmrffFM/jTGUv4HRvttJUpPodlafYVafGoNqtmPW+32Nhli2MR0IiNsjSEthI6dflQfVjs9rscH7jZ7fGgRvMU6W2GwgFaiVKUdeqiSSSe5NYzzhnX+zbi685kIBnuQUIDTHV0hTjjiW0dR9khSwTrvoVmlQ54g5qs4tdy4axaFDu1/ucQOTVSXSiLamQoKQ88pIJCyoJ6EAFRPfWgTQVS8KXKT58UC8kzKcXZWTsuW92SpQSlDi1NlsH5J20hAHttPyrYe4tDbanHFJQhIJUpR0AB7k1qCzDHr1heXTsevTCod1tr/luhKvRQ0UqSR6gghQPuCDW0jjdFxyjhGxM5d565t1sLSLiVjy3FFxkBZI/VUQST27E+lBWDlfxVAc42FONyHncNsM4/flMr1+kipJbWsa/EhAUooHoogE/qkXKs1zgXm0xLta5bUyDMaS9HfaVtLiFDYUD+6tU/NXHt14x5Cn4rdP6xLZ82HIHpIjqJ6HB8j2II9lAj2q0H2dfIrsmJc+M7g6pQioVcLYT+q2VAPN/8ykqH+ZXyoJf8VnDkflfB+qAlDWS2tKnba8QB5vb4mFH9lWho+ygD6b3rQlx34kp2LKYcYkMrLbrTiSlaFA6KVA9wQexBrcnVJ/H3w83CkK5WsLJS1JcQ1emk+iXDpKHx8ur4UqA99H1JNBLHgvv9uz3w6N45dILLzdrLtnmsLTtD7RT1JOtnsUOBJ9O6VdvSqUeITjqRxfyjcsZX1rhHUm3Oq1t2MsnpPqe4IUg79Sgn0Iq3n2f/Ht+xXBbjlV4f8qPkqWHYUL1KWkBfS8rvoFYX2H7IBJ76He8fuEN5Dw+nKI7PVPx2Ql0qS31KVHcIQ4nt6AEoWT30EH99B4v2dWaLuvH93wqSolyxyA/GOgB5D5UopHfuQ4lZP8AnHr7S/4lMBRyPw/ebC20hdwab+925RA2mQ2CUgEjt1DqRv5LNU3+z7vH6O56/R63yhN0tUiOlsns4tJS6O3zCW1/lutiFBpvt8uVbrhHnwnlMSorqXmXE+qFpIKVD6ggGtt/Gt8m5LgNjv1ytsi2TZ0Jt6REfQUracI+IaIB1veuw7aqrNx4ox/F/HFZXrvG67FkK37na21JBaM1KSpTSt72Er+Meg+JA9iKuPQUa8cvB8q13mVyfi8ILtcxXXeI7KO8Z4nu/ofqLJ+I+ytk/i7Zf9nVgciBjl25BkzXQi6K+5RYqHVBBQ0o9Ti0g6Urq+FOxtICtfjq2MyNHmxHokthuRHeQW3WnEhSVpI0QQexBFV0uWHZpwNkjmR8aQpeRcfynC7dsYQrqfhbHd6NvurWvwj9xBGlID2PF3xRdeV2MRtVkjMtyGri596uToHTDjFv4yR6q2QjSR6kD0GyJN4qwDHONcOjYxjUUtRmvjeeXouyXSAFOuH3UdD6AAAAAAVyccZ7inINhRecVu7E5g6DjYOnWFa30uI9Uq7+/wCW67XIGTQ8Pw65ZHNQt1ENkqbYb7rkOn4W2kD3WtZSkD3JFB1LFlqb1nt/xyDEUqNYW2ES5Z3pUl1PX5Kfn0t9ClH5uAexqKfHrjir5wFJntIcW7ZJzE4BCdkoJLSt/QB3qP8Al36A1JXDWLy8XwptF3Wl2/XN5dyvLye/mS3j1LAPqUp7ITv9VCayDL7HEybFbrj09O4tyhuxXfolaSkkfUb3Qar+DsvRgfLWOZW7/u8GYPvB0TplYLbpAGySELV2rbE04h1pDragpC0hSSPQg+9aj4+DZA/yYnj1EUC+Kuf6N8s9XSlzr6CokDfQO6irX4QTW1nB7IvG8Os+PuT3rgq2wmov3l78bvQkJ6j9e1B1uS8Ug5xgd5xS4hPkXKKpkKUkK8tfqhYB90qCVD6itS1+tcuyXyfZrg35cyBJcjPo3vpcQopUP5g1uLqnfii4sscXxG4Xmd2ZV/RrJLnHiXYD8IkpICQre/hcSEg6HohZ3s0E7+F7KLvl3B+O3W+QpUacmP8Ad1rfQU/eQ38KXk7A2FpAOx22TrdSbXyy22yyhplCW20JCUJSNBIHoAPYV9UClKUClKUClKUCoawHG2MK8TWZtxkBmFmNrZu7CQkBJfYcUiQka99voWd+vm++jqZawfmODdE2KJlOPRTKveNyRPYYCiDJZ0UyWPqVtFfSD260tn2oM4pXTslzhXqzQrxbX0vwp0dEiO6n0W2tIUk/mCK7lBrq8flgRZ+fXbg00pKLzbmJilfqlY6mTr8mkkj6/WrBfZ1y5Ejgu4MvOdaIuQPtMjQHQgssLI+vxLUe/wA6wf7S61uFOE3pDQLYMuK65sdifKUgfM7059Br61mX2cX/ALEbz/8AUj//AOtGoLM15eW2K3ZRjFyx27NebBuMZcZ9O9HpUNbB9iPUH2Ir1KUEQ+Fm8yxhUzj+9rR+ncIlmzyUjQ62E/7s6BsnpU2NAn16DUvVBnIDieOPEhjWZoT5VlzVAsF4UAAlMxPeI6rQ2VK7o36BKSSRoVOdApSlApSlApSlApSlB8SWW5EdyO8kKbdQULSfcEaIrURyJjzuJ55fcZeS8DbLg9FSXU6UtCFkJV6D8SdKBHYggjtW3qtf/wBoZh6bJy1BymO2hEfIYQLhBO1SGOlCzr0A6Cz6ep329yFmPBZlQyjw/WNDjra5Vn67Y+E/qho/1YI/+UW6miqMfZyZiqFmV8wiQtXkXOMJsYdtJea7LH71IUD/ANnV56BSlKCNMWhIwzmW+2dpKGbVl6TeoiUo0Ez0BLctOwNbWnyXPmSHT7VJdYlypaJU/HG7pamFvXqxSE3S3Ib6et1xsELZBV2Hmtqca9teZv2r38fusG+2ODerY+H4U+OiRHcH6yFpCkn+RoOHLLFbsnxi5Y7dmvNg3GMuM+nej0qGtg+xHqD7EVGvhZvMsYVN4/va0fp3CJZs8lI0OthP+7ugbJ6VNjQJ9eg1L1QZyA4njjxH4zmaE+VZs1QLBeFAAJTMT3iOq0NlSu6N+gSkkkaoJK5cyZ7DeMsiyiMyl6RbYDj7KFHsVgaTv6bI3Wsjj3lTM8Iz6Rm9puKZF4locbmOTUecJKVkKUF7O/xJSrsQdpHt2ranfrTbr9ZZlmu8RuXb5rKmZDC99LiFDRB13/lUOs+FPg9tfUvFZLo/ZXdJIH+jgNBBvC2IZH4kuTGuTuR7XBasFtaRH6WGFNN3FxtRKUaJPUkdR61b12Snv31aSNyXZpPNR4utqUSJcS1OTp7qV9oygtpLbWtd1FLhUe/YBPrvty8iS08ccLXybiVtixhY7S6uBGQ3pproSdHp9wPxH56PzrXbwTytK4+5iTnd2aeuol+em5gEec8HT1KUkkgdXWArv2OiO29gLkeOfjlnMOJX8kitIF2xtKpaV67rjf8AGRv6D4/4PrUJ/Z04dPm59ds3Wgot1tiKhIWR/ePulJIH+VA2f8yalrM+fsV5RxCXx9xtGud2yXJ4zlubjvRlMNxG3UFLjzyzsBCEFRPT1e376mrifB7Vx1gNsxKzpJZht/1jqvxPuqO3HD9VKJOvYaA7AUGVV075a7fe7NMs91ityoM1lTEhlwbStChog/lXcpQdW0wWbZaoltjdXkRGEMN9Wt9KUhI3rQ9BWG+IhrzuCM4R27WOUruP2WlH/wAKzyo/8SC0o4FzcrUEj9CyBs/MoIH+tBRLwQwZUzxKY27HQotw0Sn31AgdCPuziN/XalpHb9qtltUZ+zbx8Sc2yjJ1hz+wwG4bfb4CXl9Svb1AZHv6K+oq81BF3iaxCVk/Gy7jZ2wcixuQ3erQrRJ85g9ZRoEb6kgjXz6flWYcbZVAzfBLNldtUDHuUVL3SCCW1+i0HRI2lQUk/VJrISARojYNQbwS6MF5YzLh11PlQUr/AE/jqdAJ+6PKHmtpAGkpbdOgD3PxHWhugnKlKUGBZXxJht9vasijxpWP5EQR+mLJIVDknevxlPwu/hT2cSodtem66ln41vRyiJdMu5Du+V2+3KS9brdKhx2ENSBsea4plKfOIB+EKGknZ7nWpIpQKUpQVf5hw+Jgviswrl9bJRYrnK+5XV0JJTHlrZUy04rv2SoKT31oFtRPdXe0FeNm+M2fMsVuGNX+IiVbp7RbdQodx7pUk+ykkBQPsQDWEcKZJdIr8rjDNJjbuWWBpJbf10i6QN9LUpAJ7n0Ssd9LHf1FBKFYHy3jVn5T47yjC0SGXZLX9R1d/wCyzA2h5rf7gtsnXsoj51nlYFwe+bljd2yFTKGzeL9cJKFJR0+Y0h9TDKz7nbTLff3GtdtUHx4fMzdzfi+3XGcPLvEIqt13ZOgpqWz8LgUATonssA+yhUgVBljcTxz4o7hjxT5Ni5BjKucLQAQi5Mg+egAD1WgBZJ9SQO5NTnQKUpQKUpQKUpQKUpQfiEpQhKEJCUpGkpA0APlX7SlBWD7R9nq4dsT+vwZA2je/2o75/wDLWS+Au3pheHS2yUtIQZ86VIUoJ0VkOFrZ+Z02Bv5AD2rG/tH3gnhuxMbG15A2v6/DHfH/AJqnTiCxKxnizF7AvpLsG1R2XSkaBcDY6z+atmgyqlKUGI8wYNE5FwC4YtJlrguSAlyLMbTtcZ9CgptwDY3ojuNjYJGxWUw23WYbLTzxfdQ2lK3SnXWoDurXtv1rlpQKUpQKUpQKUpQKUpQKhDxt4aMs4GukppvqmWJQubJ3r4UAh0f/AG1LP70ipvrhmxmJsN+HKbS6w+2pp1Ch2UlQ0Qf3g0Ea+F3HcbsvCeKzLFa4kV642iNInPttgOPvqaSVqWr1Pxb9fT0qUKhrwnmVZsRv3Hc8umRh18k25pTrgUt2Ko+cw4degKXDofID09BMtApSlArysbsbFhamx4kh9cWRLXJaYcI6I3XoqQ3oA9JX1r0SdFZA0AAPVpQKxHl/B4nIuAXDFpMpcJyQEuRZjadrjPoUFNuAbG9EdxsbBI2N1l1KDihNusw2WXni+6htKVulOutQGirXtv1rlpSg611gRLpa5dsuEduRDlsrYkMuDaXG1pKVJI9wQSKoFlHg+5LYzqTbMdTAmWBSyqLdJUxDYSgnslxA2vrA9SlBSfb5DYNSgirw9cJY7xFZFoiqFxvkpIE25ONhKlf4ED9VAPtvZ9T7alWlKBSlKBUSeMW4OWzw3Ze+yGytxhmPpYJGnZDbavQ+vSokfUe9S3UDePOc1E8OlzYcdShU2dFYbBUAVqDgc0PmdNk6+hPtQeV9nrYf0Zwc/d1kFd4ujzyT060hsJaA+vxIWfzqx1YH4ebCca4Qw+zrjiO63amXX2wB8Lrg8xzevfrWrf1rPKBWGZhgTN95BxLNI9xct9wx915K+hHUJcd1spUyruNfF0qB7679u+xmdKBSlKBSlKBSlKBWCcvYbccghw79iktm3ZjZFl60ynAfLcB15kZ7XctOAdJ+R0odxWd0oInlcv26dxHfL7FaELJYLa4LtkkOJTJYuKj5bbCk738ThGlehHf56zvj3H2sUwWx40yoqRbIDMXqOtqKEAFR17kgn86x3KeIMHyPkmy8gXC2kXu0uBxC2+kIkKSP6supKT1FB0pJBBBA7kDVZ/QYZypgTOcR7G4i4uWu42S7MXOFMbR1FJQr40EbG0rTtJ7/ACPfWjmdKUClKUClKUClKUClKUClKUFWPHWkXvLeJ8JdQFxLvelCQkEhR24w0kAg9th1f19NGrTJSEpCUgAAaAHtVcOVvNvvjc4zsaYxcYtNrfubq99klXnAbH0U033791D5VZCgUpSgUpSgUpSgUpSgUpSgUpSgUpSgiOQwMT8UUeagNNQM4sqo7um9FU+EepBKvTZYWsAep8v6VLlRp4j4zzGANZdCbUubiVwYvjQQdEtNK1IT8jthTo0fp6etSNDkMzIbMuO4lxl9tLjaweykqGwR+RoOWlKUClKUClKUClKUClKUClKUClKUCq4+OuI3frFgGHqdUhV6yuOz8BHVopU2SN+484ex9asdUFcnMJyHxb8ZWdtSF/oC2zrzKQoH4UOANNkdtb8xCff2/dsJyYbQyyhltIShCQlKR7ADQFfdKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKUClKUFfsV675458unJR/UY9jLEBSifVx0tujX00pwd/cVYGoI8OLYuvMXM2Xgnoev6LQ2CkdvuiVIUd77g9SdfQfXtO9ApSlApSlApSlApSlApSlApSlApSlBwz4rE6DIhSmw4xIaU06g+ikqGiP5Go88OMt9PHCcYnOdc/FJr9hf2kpPRHWUsKIP7THlK36Hex2qSajG2f+rXiKukA/BCzC0ouLI6uxmRCll7sfQqaXHPb16Cex7kJOpSlApSlApSlApSlApSlApSlApSlAqHOPW/074neRcjXGT5NlgwbDEf6gSolJffSPlpSkA/l9dTC6tDTSnXFBKEJKlE+wHrUQeEpH33jafmK2pDb2V32dd1h/wDGEqeKED6DobTrXbv2oJhpSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSlApSvh9CnGHEIWW1KSQFj9U69aCIfCTFj/7N7rfo6kOfp/JbncVOoV1Jc3IU0FJOzsaaFTDWMcUYr/QfjmxYn57chVsiJYW82jpS4sd1KA9tkk/nWT0ClKUClKUClKUClKUClKUClKUClKUCo159act1osOdRwPOxS8Mznif/g3NsSv5MurV/APX0MlV0chtUS+2C4WWe2HIk+M5GfQRsFC0lKh/Img7qFJWkKSQpJGwQexFftYpxEi+scc2aDkrLrV2gsfcpKnNbeLKi2Hhons4EBY+iqyugUpSgUpSgUpSgUpSgUpSgUpSgw3nK7PWLhvMLrGd8mRHs0ksuaB6XC2oIOj2/ER612OIbGvGuLMXsLpBdg2qOy6QNAuBsdR/wCbdfPLmJOZzg0jGEvtMtS5URUkub0thuS246jt7qQhSfl379qyxIAAAGgOwoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoFKUoP/2Q==";
+  // The Tibetan text is rendered to a Canvas bitmap at runtime — no font file needed.
+  // Google Fonts Noto Serif Tibetan is loaded in the <head> and used for canvas rendering.
 
   function buildReceiptHTML(rec) {
     return `
-      <div style="text-align:center;margin-bottom:6px">
-        <img src="${LOGO_URI}" style="max-width:140px;height:auto;display:block;margin:0 auto 4px" alt="Delek Hospital">
-      </div>
+      <div class="hosp-name" style="font-family:'Noto Serif Tibetan',serif;font-size:1.2rem;margin-bottom:2px">བདེ་ལེགས་སྨན་ཁང་</div>
       <div class="hosp-name">DELEK HOSPITAL</div>
       <div class="hosp-sub">Dharamshala, Himachal Pradesh</div>
       <div class="divider"></div>
@@ -709,103 +714,127 @@
   }
 
   // ===== ESC/POS BUILDER =====
-  // Rasterise logo image into ESC/POS GS v 0 bitmap bytes
-  async function buildLogoESCPOS() {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        // Target width = 384 px (48mm at 203dpi), scale height proportionally
-        const targetW = 384;
-        const scale = targetW / img.naturalWidth;
-        const targetH = Math.round(img.naturalHeight * scale);
+  // Renders Tibetan text on a canvas, converts to 1bpp ESC* bitmap for the printer.
+  // This is the only reliable way to print non-ASCII script on any thermal printer.
+  function renderTextToBitmap(text, fontSpec, canvasW) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.font = fontSpec;
+    const metrics = ctx.measureText(text);
+    const textW = Math.ceil(metrics.width);
+    const textH = Math.ceil(metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent) + 8;
+    // Full width, text centred
+    canvas.width = canvasW;
+    canvas.height = Math.max(textH, 40);
+    const c2 = canvas.getContext('2d');
+    c2.fillStyle = '#ffffff';
+    c2.fillRect(0, 0, canvas.width, canvas.height);
+    c2.fillStyle = '#000000';
+    c2.font = fontSpec;
+    c2.textAlign = 'center';
+    c2.textBaseline = 'middle';
+    c2.fillText(text, canvasW / 2, canvas.height / 2);
+    return canvas;
+  }
 
-        const canvas = document.createElement('canvas');
-        canvas.width = targetW;
-        canvas.height = targetH;
-        const ctx = canvas.getContext('2d');
-        // White background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, targetW, targetH);
-        ctx.drawImage(img, 0, 0, targetW, targetH);
+  function canvasToESCStar(canvas) {
+    const ESC = 0x1B, LF = 0x0A;
+    const w = canvas.width;
+    const h = canvas.height;
+    const pixels = canvas.getContext('2d').getImageData(0, 0, w, h).data;
+    const result = [];
+    const dotsPerStripe = 24;
+    const bytesPerCol = 3;
 
-        const imageData = ctx.getImageData(0, 0, targetW, targetH);
-        const pixels = imageData.data;
+    // Set line spacing to exactly 24 dots (one stripe height)
+    result.push(ESC, 0x33, dotsPerStripe);
 
-        // Convert to 1bpp (black if luminance < 128)
-        const bytesPerRow = Math.ceil(targetW / 8);
-        const result = [];
-
-        // GS v 0 header: ESC, GS, 'v', '0', m, xL, xH, yL, yH
-        // m=0 (normal), xL/xH = bytes per row, yL/yH = number of rows
-        const ESC = 0x1B, GS = 0x1D;
-        result.push(
-          GS, 0x76, 0x30, 0x00,
-          bytesPerRow & 0xFF, (bytesPerRow >> 8) & 0xFF,
-          targetH & 0xFF, (targetH >> 8) & 0xFF
-        );
-
-        for (let y = 0; y < targetH; y++) {
-          for (let bx = 0; bx < bytesPerRow; bx++) {
-            let byte = 0;
-            for (let bit = 0; bit < 8; bit++) {
-              const x = bx * 8 + bit;
-              if (x < targetW) {
-                const idx = (y * targetW + x) * 4;
-                const r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
-                const lum = 0.299*r + 0.587*g + 0.114*b;
-                if (lum < 128) byte |= (0x80 >> bit); // dark pixel = black dot
-              }
+    for (let y = 0; y < h; y += dotsPerStripe) {
+      // ESC * 33 nL nH — 24-dot double density bitmap
+      result.push(ESC, 0x2A, 33, w & 0xFF, (w >> 8) & 0xFF);
+      for (let x = 0; x < w; x++) {
+        for (let b = 0; b < bytesPerCol; b++) {
+          let byte = 0;
+          for (let bit = 0; bit < 8; bit++) {
+            const py = y + b * 8 + bit;
+            if (py < h) {
+              const idx = (py * w + x) * 4;
+              const lum = 0.299 * pixels[idx] + 0.587 * pixels[idx+1] + 0.114 * pixels[idx+2];
+              if (lum < 128) byte |= (0x80 >> bit);
             }
-            result.push(byte);
           }
+          result.push(byte);
         }
-        resolve(result);
-      };
-      img.onerror = () => resolve([]); // if logo fails, skip it
-      img.src = LOGO_URI;
-    });
+      }
+      result.push(LF);
+    }
+    // Reset to default line spacing
+    result.push(ESC, 0x32);
+    return result;
+  }
+
+  // Wait for Noto Serif Tibetan font to be ready before rendering
+  async function waitForFont(fontSpec) {
+    try {
+      await document.fonts.load(fontSpec, 'བདེ་ལེགས་སྨན་ཁང་');
+    } catch(e) {}
   }
 
   async function buildESCPOS(rec) {
     const ESC = 0x1B, GS = 0x1D, LF = 0x0A;
+    // Encode a string to bytes + newline
     const enc = str => Array.from(new TextEncoder().encode(str + '\n'));
 
-    // Try to get logo bytes (rasterised bitmap)
-    const logoBytes = await buildLogoESCPOS();
+    // Printer printable width at 203dpi on 80mm paper = ~576px
+    // Use 576px canvas width for full-width bitmap
+    const PRINT_W = 576;
+
+    // Wait for Tibetan font to load
+    await waitForFont('bold 36px "Noto Serif Tibetan"');
+
+    // Render Tibetan text line
+    const tibCanvas = renderTextToBitmap('བདེ་ལེགས་སྨན་ཁང་', 'bold 36px "Noto Serif Tibetan"', PRINT_W);
+    const tibBytes = canvasToESCStar(tibCanvas);
 
     const bytes = [
-      // Initialise printer
+      // Hard reset printer
       ESC, 0x40,
-      // Centre align for logo + header
+      // Centre align
       ESC, 0x61, 0x01,
-      // Print logo bitmap
-      ...logoBytes,
-      LF,
-      // Bold hospital name
-      ESC, 0x45, 0x01,
+
+      // ── Tibetan text as bitmap ──
+      ...tibBytes,
+
+      // ── Text content ──
+      ESC, 0x45, 0x01,                    // Bold on
       ...enc('DELEK HOSPITAL'),
-      ESC, 0x45, 0x00,
+      ESC, 0x45, 0x00,                    // Bold off
       ...enc('Dharamshala, Himachal Pradesh'),
       ...enc('--------------------------------'),
       ...enc('TOKEN NUMBER'),
+
       // Double width + height for token number
       ESC, 0x45, 0x01,
       GS, 0x21, 0x11,
       ...enc(rec.token),
       GS, 0x21, 0x00,
       ESC, 0x45, 0x00,
+
       ...enc('--------------------------------'),
+
       // Left align for patient details
       ESC, 0x61, 0x00,
       ...enc('Patient : ' + rec.name),
       ...enc('Age     : ' + rec.age + ' years'),
-      ...enc('--------------------------------'),
-      // Centre align for timestamp
+
+      // Centre for footer
       ESC, 0x61, 0x01,
+      ...enc('--------------------------------'),
       ...enc('Issued: ' + formatTime(rec.timestamp)),
-      // Feed 4 lines then full cut
-      LF, LF, LF, LF,
-      GS, 0x56, 0x00,   // Full cut (most common)
+
+      // Feed paper then cut
+      LF, LF, LF, LF, LF, LF,
+      GS, 0x56, 0x00,    // Full cut
     ];
     return new Uint8Array(bytes);
   }
@@ -882,25 +911,30 @@
   function printSystem(rec) {
     const printArea = document.getElementById('print-area');
     printArea.innerHTML = `
-      <div style="width:76mm;max-height:80mm;overflow:hidden;font-family:'Courier New',monospace;font-size:10pt;padding:2mm 2mm 0 2mm;text-align:center;background:white;box-sizing:border-box">
-        <img src="${LOGO_URI}" style="max-width:55mm;height:auto;display:block;margin:0 auto 2px" alt="Delek Hospital">
-        <div style="font-size:13pt;font-weight:bold;margin-bottom:1px;letter-spacing:1px">DELEK HOSPITAL</div>
-        <div style="font-size:7.5pt;margin-bottom:4px">Dharamshala, Himachal Pradesh</div>
-        <div style="border-top:1px dashed #000;margin:4px 0"></div>
-        <div style="font-size:7pt;letter-spacing:2px;text-transform:uppercase">Token Number</div>
-        <div style="font-size:30pt;font-weight:bold;line-height:1;margin:2px 0;letter-spacing:2px">${rec.token}</div>
-        <div style="border-top:1px dashed #000;margin:4px 0"></div>
-        <div style="text-align:left;font-size:9.5pt;line-height:1.6">
+      <div style="width:72mm;font-family:'Courier New',monospace;font-size:10pt;padding:2mm;text-align:center;background:white;box-sizing:border-box">
+        <div style="font-family:'Noto Serif Tibetan',serif;font-size:18pt;font-weight:bold;margin-bottom:1px;line-height:1.3">བདེ་ལེགས་སྨན་ཁང་</div>
+        <div style="font-size:12pt;font-weight:bold;margin-bottom:2px;letter-spacing:1px">DELEK HOSPITAL</div>
+        <div style="font-size:7.5pt;margin-bottom:5px">Dharamshala, Himachal Pradesh</div>
+        <div style="border-top:1px dashed #000;margin:5px 0"></div>
+        <div style="font-size:7pt;letter-spacing:2px;text-transform:uppercase;margin-bottom:2px">Token Number</div>
+        <div style="font-size:28pt;font-weight:bold;line-height:1.1;margin:2px 0;letter-spacing:3px">${rec.token}</div>
+        <div style="border-top:1px dashed #000;margin:5px 0"></div>
+        <div style="text-align:left;font-size:9pt;line-height:1.8;padding:0 1mm">
           <div>Patient : <b>${rec.name}</b></div>
           <div>Age     : ${rec.age} years</div>
         </div>
-        <div style="border-top:1px dashed #000;margin:4px 0"></div>
-        <div style="font-size:7.5pt;margin-top:2px">Issued: ${formatTime(rec.timestamp)}</div>
+        <div style="border-top:1px dashed #000;margin:5px 0"></div>
+        <div style="font-size:7.5pt;margin-bottom:4mm">Issued: ${formatTime(rec.timestamp)}</div>
       </div>
     `;
     printArea.style.display = 'block';
-    window.print();
-    setTimeout(() => { printArea.style.display = 'none'; }, 1500);
+    // Wait for Tibetan font to render before printing
+    document.fonts.ready.then(() => {
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => { printArea.style.display = 'none'; }, 2000);
+      }, 200);
+    });
   }
 
   function testPrint() {
@@ -924,8 +958,7 @@
       serialPort = await navigator.serial.requestPort();
       const baud = parseInt(document.getElementById('serial-baud').value);
       await serialPort.open({ baudRate: baud });
-      const textEncoder = new TextEncoderStream();
-      textEncoder.readable.pipeTo(serialPort.writable);
+      // Get raw writer directly — we send Uint8Array ESC/POS bytes, not text
       serialWriter = serialPort.writable.getWriter();
       setSerialStatus('connected', '✅ USB Printer Connected');
       document.getElementById('serial-connect-btn').textContent = 'Reconnect';

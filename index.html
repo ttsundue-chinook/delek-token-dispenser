@@ -782,59 +782,43 @@
 
   async function buildESCPOS(rec) {
     const ESC = 0x1B, GS = 0x1D, LF = 0x0A;
-    // Encode a string to bytes + newline
     const enc = str => Array.from(new TextEncoder().encode(str + '\n'));
 
-    // Printer printable width at 203dpi on 80mm paper = ~576px
-    // Use 576px canvas width for full-width bitmap
-    const PRINT_W = 576;
+    // IMPORTANT: Keep bitmap narrow so BLE transfer stays fast.
+    // 384px = full printable width at 203dpi on 80mm paper (48mm * 8 dots/mm).
+    // For Bluetooth we keep the same width but the bitmap is only ~3 stripes tall
+    // so total bytes ≈ 384 * 3 * 3 = ~3.5KB — manageable over BLE.
+    const PRINT_W = 384;
 
-    // Wait for Tibetan font to load
-    await waitForFont('bold 36px "Noto Serif Tibetan"');
-
-    // Render Tibetan text line
-    const tibCanvas = renderTextToBitmap('བདེ་ལེགས་སྨན་ཁང་', 'bold 36px "Noto Serif Tibetan"', PRINT_W);
+    await waitForFont('bold 32px "Noto Serif Tibetan"');
+    const tibCanvas = renderTextToBitmap('བདེ་ལེགས་སྨན་ཁང་', 'bold 32px "Noto Serif Tibetan"', PRINT_W);
     const tibBytes = canvasToESCStar(tibCanvas);
 
     const bytes = [
-      // Hard reset printer
-      ESC, 0x40,
-      // Centre align
-      ESC, 0x61, 0x01,
-
-      // ── Tibetan text as bitmap ──
-      ...tibBytes,
-
-      // ── Text content ──
-      ESC, 0x45, 0x01,                    // Bold on
+      ESC, 0x40,           // Hard reset
+      ESC, 0x61, 0x01,     // Centre align
+      ...tibBytes,          // Tibetan bitmap
+      LF,
+      ESC, 0x45, 0x01,     // Bold on
       ...enc('DELEK HOSPITAL'),
-      ESC, 0x45, 0x00,                    // Bold off
+      ESC, 0x45, 0x00,     // Bold off
       ...enc('Dharamshala, Himachal Pradesh'),
       ...enc('--------------------------------'),
       ...enc('TOKEN NUMBER'),
-
-      // Double width + height for token number
       ESC, 0x45, 0x01,
-      GS, 0x21, 0x11,
+      GS, 0x21, 0x11,      // Double width+height
       ...enc(rec.token),
-      GS, 0x21, 0x00,
+      GS, 0x21, 0x00,      // Reset size
       ESC, 0x45, 0x00,
-
       ...enc('--------------------------------'),
-
-      // Left align for patient details
-      ESC, 0x61, 0x00,
+      ESC, 0x61, 0x00,     // Left align
       ...enc('Patient : ' + rec.name),
       ...enc('Age     : ' + rec.age + ' years'),
-
-      // Centre for footer
-      ESC, 0x61, 0x01,
+      ESC, 0x61, 0x01,     // Centre align
       ...enc('--------------------------------'),
       ...enc('Issued: ' + formatTime(rec.timestamp)),
-
-      // Feed paper then cut
       LF, LF, LF, LF, LF, LF,
-      GS, 0x56, 0x00,    // Full cut
+      GS, 0x56, 0x00,      // Full cut
     ];
     return new Uint8Array(bytes);
   }
@@ -898,10 +882,15 @@
   }
 
   async function doPrint(rec) {
-    if (printerMode === 'serial' && serialWriter) {
-      await printSerial(rec);
-    } else if (printerMode === 'bluetooth' && btCharacteristic) {
+    // Auto-detect: use whichever connection is actually live,
+    // regardless of which mode card the user last tapped.
+    if (btCharacteristic || btDevice) {
       await printBluetooth(rec);
+    } else if (serialWriter) {
+      await printSerial(rec);
+    } else if (printerMode === 'serial' || printerMode === 'bluetooth') {
+      // Mode selected but not connected — tell user
+      toast('⚠️ Printer not connected. Go to Printer tab and connect first.');
     } else {
       printSystem(rec);
     }
@@ -953,26 +942,31 @@
       setSerialStatus('error', '❌ Web Serial not supported. Use Chrome or Edge on desktop.');
       return;
     }
+    // Always clean up any previous connection first
+    try {
+      if (serialWriter) { serialWriter.releaseLock(); serialWriter = null; }
+      if (serialPort) { await serialPort.close(); serialPort = null; }
+    } catch(e) {}
+
     try {
       setSerialStatus('', '🔵 Requesting port...');
       serialPort = await navigator.serial.requestPort();
-      const baud = parseInt(document.getElementById('serial-baud').value);
+      const baud = parseInt(document.getElementById('serial-baud').value) || 9600;
       await serialPort.open({ baudRate: baud });
-      // Get raw writer directly — we send Uint8Array ESC/POS bytes, not text
       serialWriter = serialPort.writable.getWriter();
       setSerialStatus('connected', '✅ USB Printer Connected');
       document.getElementById('serial-connect-btn').textContent = 'Reconnect';
       toast('🖨️ USB printer connected!');
     } catch(e) {
+      serialWriter = null;
+      serialPort = null;
       setSerialStatus('error', '❌ ' + e.message);
     }
   }
 
   async function disconnectSerial() {
-    try {
-      if (serialWriter) { await serialWriter.close(); serialWriter = null; }
-      if (serialPort) { await serialPort.close(); serialPort = null; }
-    } catch(e) {}
+    try { if (serialWriter) { serialWriter.releaseLock(); serialWriter = null; } } catch(e) {}
+    try { if (serialPort) { await serialPort.close(); serialPort = null; } } catch(e) {}
     setSerialStatus('', '⚪ Not Connected');
     toast('USB printer disconnected');
   }
@@ -984,17 +978,27 @@
   }
 
   async function printSerial(rec) {
+    if (!serialPort) {
+      toast('⚠️ USB printer not connected. Go to Printer tab and connect.');
+      return;
+    }
     try {
+      // Re-acquire writer fresh each time to avoid locked-stream errors
+      if (serialWriter) { try { serialWriter.releaseLock(); } catch(e) {} }
+      serialWriter = serialPort.writable.getWriter();
+
       const data = await buildESCPOS(rec);
       const chunkSize = 128;
       for (let i = 0; i < data.length; i += chunkSize) {
         await serialWriter.write(data.slice(i, i + chunkSize));
-        await new Promise(r => setTimeout(r, 10));
+        await new Promise(r => setTimeout(r, 15));
       }
+      serialWriter.releaseLock();
+      serialWriter = null;
       toast('✅ Printed via USB!');
     } catch(e) {
-      toast('⚠️ USB print failed: ' + e.message + ' — falling back to system print');
-      printSystem(rec);
+      toast('⚠️ USB print failed: ' + e.message);
+      try { if (serialWriter) { serialWriter.releaseLock(); serialWriter = null; } } catch(e2) {}
     }
   }
 
@@ -1156,7 +1160,7 @@
             await char.writeValue(chunk);
           }
         }
-        await delay(50); // 50ms between chunks — safe for all printers
+        await delay(30); // 30ms between chunks — adequate with smaller bitmap
       }
 
       await delay(300); // Let printer finish processing before we update UI

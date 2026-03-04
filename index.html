@@ -966,6 +966,39 @@
   }
 
   // ===== BLUETOOTH =====
+  // Core helper: scan all services/characteristics and return the first writable one
+  async function findWritableChar(server) {
+    const serviceUUIDs = [
+      '000018f0-0000-1000-8000-00805f9b34fb',
+      '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+      '0000ff00-0000-1000-8000-00805f9b34fb',
+      '0000ffe0-0000-1000-8000-00805f9b34fb',
+    ];
+    // Try known UUIDs first (faster)
+    for (const sUUID of serviceUUIDs) {
+      try {
+        const svc = await server.getPrimaryService(sUUID);
+        const chars = await svc.getCharacteristics();
+        for (const c of chars) {
+          if (c.properties.write || c.properties.writeWithoutResponse) return c;
+        }
+      } catch(e) {}
+    }
+    // Fall back: enumerate all services
+    try {
+      const services = await server.getPrimaryServices();
+      for (const svc of services) {
+        try {
+          const chars = await svc.getCharacteristics();
+          for (const c of chars) {
+            if (c.properties.write || c.properties.writeWithoutResponse) return c;
+          }
+        } catch(e) {}
+      }
+    } catch(e) {}
+    return null;
+  }
+
   async function connectBluetooth() {
     if (!navigator.bluetooth) {
       document.getElementById('bt-status').className = 'bt-status error';
@@ -986,43 +1019,9 @@
         ]
       });
 
-      document.getElementById('bt-status').textContent = '🔵 Connecting to ' + btDevice.name + '...';
+      document.getElementById('bt-status').textContent = '🔵 Connecting to ' + (btDevice.name || 'printer') + '...';
       const server = await btDevice.gatt.connect();
-
-      const serviceUUIDs = [
-        '000018f0-0000-1000-8000-00805f9b34fb',
-        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-        '0000ff00-0000-1000-8000-00805f9b34fb',
-        '0000ffe0-0000-1000-8000-00805f9b34fb',
-      ];
-
-      let found = false;
-      for (const sUUID of serviceUUIDs) {
-        try {
-          const service = await server.getPrimaryService(sUUID);
-          const chars = await service.getCharacteristics();
-          for (const c of chars) {
-            if (c.properties.write || c.properties.writeWithoutResponse) {
-              btCharacteristic = c; found = true; break;
-            }
-          }
-          if (found) break;
-        } catch(e) {}
-      }
-      if (!found) {
-        try {
-          const services = await server.getPrimaryServices();
-          for (const service of services) {
-            const chars = await service.getCharacteristics();
-            for (const c of chars) {
-              if (c.properties.write || c.properties.writeWithoutResponse) {
-                btCharacteristic = c; found = true; break;
-              }
-            }
-            if (found) break;
-          }
-        } catch(e) {}
-      }
+      btCharacteristic = await findWritableChar(server);
 
       if (btCharacteristic) {
         document.getElementById('bt-status').className = 'bt-status connected';
@@ -1048,31 +1047,95 @@
   }
 
   async function disconnectBluetooth() {
-    if (btDevice && btDevice.gatt.connected) btDevice.gatt.disconnect();
-    btCharacteristic = null; btDevice = null;
+    try { if (btDevice && btDevice.gatt.connected) btDevice.gatt.disconnect(); } catch(e) {}
+    btCharacteristic = null;
+    btDevice = null;
     document.getElementById('bt-status').className = 'bt-status';
     document.getElementById('bt-status').textContent = '⚪ Not Connected';
   }
 
-  async function printBluetooth(rec) {
+  // KEY FIX: Re-connect GATT and re-acquire characteristic fresh before every print.
+  // Android's Web Bluetooth stack caches and stales the characteristic after first use.
+  async function getFreshCharacteristic() {
+    if (!btDevice) throw new Error('No printer paired. Please connect first.');
+
+    // Disconnect GATT fully first to clear Android BLE cache
     try {
+      if (btDevice.gatt.connected) {
+        btDevice.gatt.disconnect();
+        await new Promise(r => setTimeout(r, 600)); // wait for clean disconnect
+      }
+    } catch(e) {}
+
+    // Reconnect fresh
+    let server;
+    let attempts = 0;
+    while (attempts < 3) {
+      try {
+        server = await btDevice.gatt.connect();
+        break;
+      } catch(e) {
+        attempts++;
+        if (attempts >= 3) throw new Error('Could not reconnect to printer: ' + e.message);
+        await new Promise(r => setTimeout(r, 500));
+      }
+    }
+
+    const char = await findWritableChar(server);
+    if (!char) throw new Error('Printer characteristic not found after reconnect.');
+    return char;
+  }
+
+  async function printBluetooth(rec) {
+    const statusEl = document.getElementById('bt-status');
+    try {
+      statusEl.textContent = '🔵 Preparing print...';
+
+      // Always reconnect fresh — this is the critical fix for Android
+      const char = await getFreshCharacteristic();
+      btCharacteristic = char; // update global ref
+
       const data = await buildESCPOS(rec);
-      const chunkSize = 100; // smaller chunks = more reliable on Android BT
-      const useWriteWithoutResponse = btCharacteristic.properties.writeWithoutResponse;
+
+      // Use small chunks with generous delays — Android BLE MTU is typically 20 bytes
+      // but most printers accept up to 100 bytes if we wait between chunks
+      const chunkSize = 64;
+      const delay = ms => new Promise(r => setTimeout(r, ms));
+
+      statusEl.textContent = '🖨️ Printing...';
+
+      const canWriteWithoutResponse = char.properties.writeWithoutResponse;
+
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
-        if (useWriteWithoutResponse) {
-          await btCharacteristic.writeValueWithoutResponse(chunk);
-        } else {
-          await btCharacteristic.writeValue(chunk);
+        try {
+          if (canWriteWithoutResponse) {
+            await char.writeValueWithoutResponse(chunk);
+          } else {
+            await char.writeValue(chunk);
+          }
+        } catch(writeErr) {
+          // If one write fails mid-stream, wait and retry once
+          await delay(200);
+          if (canWriteWithoutResponse) {
+            await char.writeValueWithoutResponse(chunk);
+          } else {
+            await char.writeValue(chunk);
+          }
         }
-        // Small delay between chunks to avoid buffer overflow on printer
-        await new Promise(r => setTimeout(r, 20));
+        await delay(50); // 50ms between chunks — safe for all printers
       }
-      toast('✅ Printed via Bluetooth!');
+
+      await delay(300); // Let printer finish processing before we update UI
+      statusEl.className = 'bt-status connected';
+      statusEl.textContent = '✅ Connected: ' + (btDevice.name || 'Printer');
+      toast('✅ Token printed!');
     } catch(e) {
-      toast('⚠️ BT print failed: ' + e.message + ' — using system print');
-      printSystem(rec);
+      statusEl.className = 'bt-status error';
+      statusEl.textContent = '❌ Print failed: ' + e.message;
+      toast('⚠️ BT print failed — tap Printer tab to reconnect');
+      // Mark as disconnected so user knows to reconnect
+      btCharacteristic = null;
     }
   }
 

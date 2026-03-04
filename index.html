@@ -3,37 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delek Hospital - Token System</title>
+    <title>Delek Hospital - USB Token System</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; color: #333; }
-        .container { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #0056b3; }
-        label { display: block; margin: 10px 0 5px; font-weight: bold; }
-        input, select, button { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
-        button { cursor: pointer; border: none; font-weight: bold; transition: 0.3s; }
-        .btn-print { background-color: #28a745; color: white; }
-        .btn-export { background-color: #17a2b8; color: white; }
-        .btn-connect { background-color: #6c757d; color: white; }
-        .history { margin-top: 30px; border-top: 2px solid #eee; padding-top: 20px; }
-        table { width: 100%; font-size: 14px; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: left; }
-        .status { text-align: center; font-size: 0.9em; margin-bottom: 10px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f3; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 450px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #d32f2f; margin-top: 0; border-bottom: 2px solid #f44336; padding-bottom: 10px; }
+        .status { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; border: 1px solid #ddd; }
+        label { display: block; margin: 12px 0 5px; font-size: 0.9em; color: #666; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 14px; margin-top: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-connect { background: #2196F3; color: white; }
+        .btn-print { background: #4CAF50; color: white; margin-top: 25px; }
+        .btn-export { background: #607D8B; color: white; margin-top: 10px; }
+        .history-section { margin-top: 30px; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fafafa; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
+        .btn-reprint { padding: 5px 10px; background: #ff9800; color: white; border-radius: 4px; font-size: 12px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>Delek Hospital</h2>
-    <div id="printer-status" class="status">Printer: 🔴 Not Connected</div>
-    <button class="btn-connect" onclick="connectPrinter()">Step 1: Connect Bluetooth Printer</button>
-
-    <hr>
+    <div id="status" class="status">Printer: ⚪ Not Connected</div>
+    
+    <button class="btn-connect" onclick="connectUSB()">1. Pair USB Printer</button>
 
     <label>Patient Name</label>
-    <input type="text" id="pName" placeholder="Enter Full Name">
+    <input type="text" id="pName" placeholder="Full Name">
 
     <label>Age</label>
-    <input type="number" id="pAge" placeholder="Enter Age">
+    <input type="number" id="pAge" placeholder="Age">
 
     <label>Nationality</label>
     <select id="pNationality">
@@ -42,14 +42,14 @@
         <option value="Other">Other</option>
     </select>
 
-    <label>Phone Number (Optional)</label>
-    <input type="tel" id="pPhone" placeholder="10-digit number">
+    <label>Phone (Optional)</label>
+    <input type="tel" id="pPhone" placeholder="Mobile Number">
 
-    <button class="btn-print" onclick="issueToken()">Issue & Print Token</button>
-    <button class="btn-export" onclick="exportData()">Export Records (CSV)</button>
+    <button class="btn-print" onclick="processNewToken()">Issue & Print Token</button>
+    <button class="btn-export" onclick="exportToCSV()">Export Data to CSV</button>
 
-    <div class="history">
-        <h3>Recent Tokens</h3>
+    <div class="history-section">
+        <h3>Recent Tokens (Reprint)</h3>
         <table id="historyTable">
             <thead>
                 <tr>
@@ -64,113 +64,119 @@
 </div>
 
 <script>
-    let printerDevice = null;
-    let characteristic = null;
-    let records = JSON.parse(localStorage.getItem('delek_records') || '[]');
+    let device;
+    let records = JSON.parse(localStorage.getItem('delek_db') || '[]');
 
-    // 1. Connect to Bluetooth Printer
-    async function connectPrinter() {
+    // --- USB CONNECTION LOGIC ---
+    async function connectUSB() {
         try {
-            printerDevice = await navigator.bluetooth.requestDevice({
-                filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }, { namePrefix: 'Printer' }, { namePrefix: 'MTP' }],
-                optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb']
-            });
-            const server = await printerDevice.gatt.connect();
-            const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-            const characteristics = await service.getCharacteristics();
-            characteristic = characteristics.find(c => c.properties.write);
+            // Requesting USB device access
+            device = await navigator.usb.requestDevice({ filters: [] }); 
+            await device.open();
             
-            document.getElementById('printer-status').innerText = "Printer: 🟢 Connected";
-            alert("Printer Connected Successfully!");
-        } catch (error) {
-            console.log(error);
-            alert("Connection Failed. Make sure Bluetooth is ON and you're using Chrome/Edge (Android/PC) or Bluefy (iOS).");
+            // Select configuration and claim interface (usually index 0 for printers)
+            if (device.configuration === null) await device.selectConfiguration(1);
+            await device.claimInterface(0); 
+            
+            document.getElementById('status').innerText = "Printer: 🟢 Ready (USB)";
+            document.getElementById('status').style.color = "green";
+        } catch (err) {
+            console.error(err);
+            alert("Failed to connect. Ensure the printer is ON and connected via USB.");
         }
     }
 
-    // 2. Issue Token & Save Data
-    function issueToken() {
+    // --- PRINTING LOGIC ---
+    async function printData(data) {
+        if (!device) return alert("Please click 'Pair USB Printer' first!");
+
+        const encoder = new TextEncoder();
+        
+        // ESC/POS Formatting
+        const esc = {
+            init: '\x1B\x40',
+            center: '\x1B\x61\x01',
+            left: '\x1B\x61\x00',
+            boldOn: '\x1B\x45\x01',
+            boldOff: '\x1B\x45\x00',
+            sizeLarge: '\x1D\x21\x11',
+            sizeNormal: '\x1D\x21\x00',
+            feed: '\n\n\n\n\x1D\x56\x41\x03' // Feed and Cut
+        };
+
+        const content = 
+            esc.init + esc.center + 
+            "DELEK HOSPITAL\n" +
+            "------------------------------\n" +
+            esc.boldOn + esc.sizeLarge + "TOKEN: " + data.tokenNo + esc.sizeNormal + esc.boldOff + "\n" +
+            "------------------------------\n" +
+            esc.left + "Patient: " + data.name + "\n" +
+            "Age: " + data.age + "\n" +
+            "Date: " + data.timestamp + "\n" +
+            esc.center + "Please wait for your turn\n" +
+            esc.feed;
+
+        const dataBuffer = encoder.encode(content);
+        
+        // Find the OUT endpoint (usually index 1 or 2)
+        const endpoint = device.configuration.interfaces[0].alternate.endpoints.find(e => e.direction === 'out');
+        await device.transferOut(endpoint.endpointNumber, dataBuffer);
+    }
+
+    // --- DATA HANDLING ---
+    function processNewToken() {
         const name = document.getElementById('pName').value;
         const age = document.getElementById('pAge').value;
         const nationality = document.getElementById('pNationality').value;
-        const phone = document.getElementById('pPhone').value;
+        const phone = document.getElementById('pPhone').value || "N/A";
 
-        if (!name || !age) return alert("Please fill Name and Age.");
+        if(!name || !age) return alert("Fill required fields.");
 
         const tokenNo = records.length + 1;
-        const timestamp = new Date().toLocaleString();
+        const timestamp = new Date().toLocaleString('en-IN');
 
         const entry = { tokenNo, name, age, nationality, phone, timestamp };
         records.push(entry);
-        localStorage.setItem('delek_records', JSON.stringify(records));
+        localStorage.setItem('delek_db', JSON.stringify(records));
 
-        updateHistory();
-        printToken(entry);
+        renderHistory();
+        printData(entry);
+        
+        // Clear inputs
+        document.getElementById('pName').value = "";
+        document.getElementById('pAge').value = "";
     }
 
-    // 3. Printing Logic (ESC/POS Commands)
-    async function printToken(data) {
-        if (!characteristic) return alert("Please connect the printer first!");
-
-        const encoder = new TextEncoder();
-        // ESC/POS Command Sequences
-        const init = "\x1B\x40";           // Reset printer
-        const center = "\x1B\x61\x01";     // Align Center
-        const left = "\x1B\x61\x00";       // Align Left
-        const boldOn = "\x1B\x45\x01";     // Bold On
-        const boldOff = "\x1B\x45\x00";    // Bold Off
-        const sizeBig = "\x1D\x21\x11";    // Double size text
-        const sizeNormal = "\x1D\x21\x00"; // Normal size
-        const feed = "\n\n\n\n";           // Space for tearing
-
-        let receipt = init + center + "Delek Hospital\n" + 
-                      "------------------------------\n" +
-                      boldOn + sizeBig + "TOKEN: " + data.tokenNo + boldOff + sizeNormal + "\n" +
-                      "------------------------------\n" +
-                      left + "Name: " + data.name + "\n" +
-                      "Age: " + data.age + "\n" +
-                      "Time: " + data.timestamp + "\n" +
-                      center + "Thank You\n" + feed;
-
-        await characteristic.writeValue(encoder.encode(receipt));
-    }
-
-    // 4. Update History Table
-    function updateHistory() {
+    function renderHistory() {
         const tbody = document.querySelector('#historyTable tbody');
         tbody.innerHTML = records.slice(-5).reverse().map(r => `
             <tr>
                 <td>${r.tokenNo}</td>
                 <td>${r.name}</td>
-                <td><button onclick='reprint(${r.tokenNo})' style="padding:5px; margin:0; font-size:12px;">Reprint</button></td>
+                <td><button class="btn-reprint" onclick="reprintToken(${r.tokenNo})">Reprint</button></td>
             </tr>
         `).join('');
     }
 
-    function reprint(tNo) {
-        const data = records.find(r => r.tokenNo === tNo);
-        if (data) printToken(data);
+    function reprintToken(num) {
+        const data = records.find(r => r.tokenNo === num);
+        if(data) printData(data);
     }
 
-    // 5. Export to CSV
-    function exportData() {
-        let csv = "Token No,Name,Age,Nationality,Phone,Timestamp\n";
+    function exportToCSV() {
+        let csv = "TokenNo,Name,Age,Nationality,Phone,Timestamp\n";
         records.forEach(r => {
-            csv += `${r.tokenNo},"${r.name}",${r.age},${r.nationality},"${r.phone}",${r.timestamp}\n`;
+            csv += `${r.tokenNo},"${r.name}",${r.age},${r.nationality},"${r.phone}","${r.timestamp}"\n`;
         });
         const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.setAttribute('hidden', '');
-        a.setAttribute('href', url);
-        a.setAttribute('download', 'Delek_Hospital_Records.csv');
-        document.body.appendChild(a);
+        a.href = url;
+        a.download = `Delek_Records_${new Date().toLocaleDateString()}.csv`;
         a.click();
-        document.body.removeChild(a);
     }
 
-    // Load history on start
-    updateHistory();
+    renderHistory();
 </script>
 
 </body>

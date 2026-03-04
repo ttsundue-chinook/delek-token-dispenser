@@ -709,17 +709,80 @@
   }
 
   // ===== ESC/POS BUILDER =====
-  function buildESCPOS(rec) {
+  // Rasterise logo image into ESC/POS GS v 0 bitmap bytes
+  async function buildLogoESCPOS() {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        // Target width = 384 px (48mm at 203dpi), scale height proportionally
+        const targetW = 384;
+        const scale = targetW / img.naturalWidth;
+        const targetH = Math.round(img.naturalHeight * scale);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetW;
+        canvas.height = targetH;
+        const ctx = canvas.getContext('2d');
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, targetW, targetH);
+        ctx.drawImage(img, 0, 0, targetW, targetH);
+
+        const imageData = ctx.getImageData(0, 0, targetW, targetH);
+        const pixels = imageData.data;
+
+        // Convert to 1bpp (black if luminance < 128)
+        const bytesPerRow = Math.ceil(targetW / 8);
+        const result = [];
+
+        // GS v 0 header: ESC, GS, 'v', '0', m, xL, xH, yL, yH
+        // m=0 (normal), xL/xH = bytes per row, yL/yH = number of rows
+        const ESC = 0x1B, GS = 0x1D;
+        result.push(
+          GS, 0x76, 0x30, 0x00,
+          bytesPerRow & 0xFF, (bytesPerRow >> 8) & 0xFF,
+          targetH & 0xFF, (targetH >> 8) & 0xFF
+        );
+
+        for (let y = 0; y < targetH; y++) {
+          for (let bx = 0; bx < bytesPerRow; bx++) {
+            let byte = 0;
+            for (let bit = 0; bit < 8; bit++) {
+              const x = bx * 8 + bit;
+              if (x < targetW) {
+                const idx = (y * targetW + x) * 4;
+                const r = pixels[idx], g = pixels[idx+1], b = pixels[idx+2];
+                const lum = 0.299*r + 0.587*g + 0.114*b;
+                if (lum < 128) byte |= (0x80 >> bit); // dark pixel = black dot
+              }
+            }
+            result.push(byte);
+          }
+        }
+        resolve(result);
+      };
+      img.onerror = () => resolve([]); // if logo fails, skip it
+      img.src = LOGO_URI;
+    });
+  }
+
+  async function buildESCPOS(rec) {
     const ESC = 0x1B, GS = 0x1D, LF = 0x0A;
     const enc = str => Array.from(new TextEncoder().encode(str + '\n'));
+
+    // Try to get logo bytes (rasterised bitmap)
+    const logoBytes = await buildLogoESCPOS();
+
     const bytes = [
-      // Init
+      // Initialise printer
       ESC, 0x40,
-      // Center align
+      // Centre align for logo + header
       ESC, 0x61, 0x01,
-      // Bold on + large font for hospital name
+      // Print logo bitmap
+      ...logoBytes,
+      LF,
+      // Bold hospital name
       ESC, 0x45, 0x01,
-      GS, 0x21, 0x00,
       ...enc('DELEK HOSPITAL'),
       ESC, 0x45, 0x00,
       ...enc('Dharamshala, Himachal Pradesh'),
@@ -732,15 +795,17 @@
       GS, 0x21, 0x00,
       ESC, 0x45, 0x00,
       ...enc('--------------------------------'),
-      // Left align
+      // Left align for patient details
       ESC, 0x61, 0x00,
       ...enc('Patient : ' + rec.name),
       ...enc('Age     : ' + rec.age + ' years'),
       ...enc('--------------------------------'),
-      ...enc('Issued  : ' + formatTime(rec.timestamp)),
-      // Feed and cut
-      LF, LF, LF,
-      GS, 0x56, 0x41, 0x10
+      // Centre align for timestamp
+      ESC, 0x61, 0x01,
+      ...enc('Issued: ' + formatTime(rec.timestamp)),
+      // Feed 4 lines then full cut
+      LF, LF, LF, LF,
+      GS, 0x56, 0x00,   // Full cut (most common)
     ];
     return new Uint8Array(bytes);
   }
@@ -887,11 +952,11 @@
 
   async function printSerial(rec) {
     try {
-      const data = buildESCPOS(rec);
-      // Write in chunks
+      const data = await buildESCPOS(rec);
       const chunkSize = 128;
       for (let i = 0; i < data.length; i += chunkSize) {
         await serialWriter.write(data.slice(i, i + chunkSize));
+        await new Promise(r => setTimeout(r, 10));
       }
       toast('✅ Printed via USB!');
     } catch(e) {
@@ -991,14 +1056,22 @@
 
   async function printBluetooth(rec) {
     try {
-      const data = buildESCPOS(rec);
-      const chunkSize = 512;
+      const data = await buildESCPOS(rec);
+      const chunkSize = 100; // smaller chunks = more reliable on Android BT
+      const useWriteWithoutResponse = btCharacteristic.properties.writeWithoutResponse;
       for (let i = 0; i < data.length; i += chunkSize) {
-        await btCharacteristic.writeValue(data.slice(i, i + chunkSize));
+        const chunk = data.slice(i, i + chunkSize);
+        if (useWriteWithoutResponse) {
+          await btCharacteristic.writeValueWithoutResponse(chunk);
+        } else {
+          await btCharacteristic.writeValue(chunk);
+        }
+        // Small delay between chunks to avoid buffer overflow on printer
+        await new Promise(r => setTimeout(r, 20));
       }
       toast('✅ Printed via Bluetooth!');
     } catch(e) {
-      toast('⚠️ BT print failed — using system print');
+      toast('⚠️ BT print failed: ' + e.message + ' — using system print');
       printSystem(rec);
     }
   }

@@ -555,24 +555,23 @@ async function printBluetooth(rec) {
     const char = await btGetFreshChar();
     btChar = char;
 
-    const data      = buildESCPOS(rec);
-    const CHUNK     = 100;
-    const useNoResp = char.properties.writeWithoutResponse;
+    const data  = buildESCPOS(rec);
+    // ── Critical: use 20-byte chunks (BLE guaranteed MTU floor) ──
+    // writeValue (WITH response) waits for the printer to ACK each chunk
+    // before we send the next one — this is the only reliable flow control
+    // on Android BLE. writeValueWithoutResponse has no backpressure and
+    // overflows the printer buffer after the first few packets.
+    const CHUNK = 20;
 
     setBtStatus('', '🖨️ Printing…');
     for (let i = 0; i < data.length; i += CHUNK) {
       const chunk = data.slice(i, i + CHUNK);
-      try {
-        if (useNoResp) await char.writeValueWithoutResponse(chunk);
-        else           await char.writeValue(chunk);
-      } catch(e) {
-        await sleep(150);
-        if (useNoResp) await char.writeValueWithoutResponse(chunk);
-        else           await char.writeValue(chunk);
-      }
-      await sleep(40);
+      // Always use writeValue (acknowledged write) for flow control
+      await char.writeValue(chunk);
+      // Small extra delay so the printer's MCU can process the command
+      await sleep(20);
     }
-    await sleep(200);
+    await sleep(400);
     setBtStatus('ok', '✅ Connected: ' + (btDevice.name || 'Printer'));
     toast('✅ Token printed!');
   } catch(e) {

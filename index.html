@@ -1,183 +1,693 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delek Hospital - USB Token System</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #eef2f3; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .container { width: 100%; max-width: 450px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
-        h2 { text-align: center; color: #d32f2f; margin-top: 0; border-bottom: 2px solid #f44336; padding-bottom: 10px; }
-        .status { background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; margin-bottom: 20px; font-weight: bold; border: 1px solid #ddd; }
-        label { display: block; margin: 12px 0 5px; font-size: 0.9em; color: #666; }
-        input, select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; padding: 14px; margin-top: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
-        .btn-connect { background: #2196F3; color: white; }
-        .btn-print { background: #4CAF50; color: white; margin-top: 25px; }
-        .btn-export { background: #607D8B; color: white; margin-top: 10px; }
-        .history-section { margin-top: 30px; width: 100%; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fafafa; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-        .btn-reprint { padding: 5px 10px; background: #ff9800; color: white; border-radius: 4px; font-size: 12px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Delek Hospital — Token Dispenser</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #1a3a5c;
+  --accent:  #c8973a;
+  --accent-light: #f0d89a;
+  --bg:      #f5f0e8;
+  --surface: #ffffff;
+  --surface2:#ece7dc;
+  --text:    #1a1a1a;
+  --muted:   #6b6355;
+  --border:  #d4cbbe;
+  --success: #2d7a4f;
+  --danger:  #c0392b;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+header{background:var(--primary);color:#fff;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 10px rgba(0,0,0,.2)}
+header h1{font-family:'Playfair Display',serif;font-size:1.3rem}
+header h1 span{color:var(--accent-light)}
+.counter-badge{background:var(--accent);color:var(--primary);font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:.82rem;padding:5px 12px;border-radius:20px}
+
+.tabs{display:flex;background:var(--surface2);border-bottom:2px solid var(--border);overflow-x:auto}
+.tab-btn{flex:1;min-width:70px;padding:13px 10px;border:none;background:transparent;font-family:'IBM Plex Sans',sans-serif;font-size:.8rem;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tab-btn.active{background:var(--surface);color:var(--primary);border-bottom:3px solid var(--accent);font-weight:600}
+
+.panel{display:none;padding:18px}
+.panel.active{display:block}
+
+.card{background:var(--surface);border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.06);max-width:500px;margin:0 auto}
+.card h2{font-family:'Playfair Display',serif;color:var(--primary);font-size:1.2rem;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+
+.fg{margin-bottom:14px}
+.fg label{display:block;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:5px}
+.fg input,.fg select{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:.93rem;background:#fafaf7;-webkit-appearance:none}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,58,92,.08)}
+
+.btn{padding:11px 20px;border:none;border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:.88rem;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:all .15s}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:#142d4a}
+.btn-full{width:100%;justify-content:center;padding:13px;font-size:.95rem;margin-top:6px}
+.btn-success{background:var(--success);color:#fff}
+.btn-accent{background:var(--accent);color:var(--primary)}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--muted)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-sm{padding:6px 12px;font-size:.78rem}
+
+/* modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:14px;padding:24px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{font-family:'Playfair Display',serif;color:var(--primary);margin-bottom:14px}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.modal-btns .btn{flex:1;justify-content:center}
+
+/* receipt preview */
+.receipt{border:2px dashed var(--border);border-radius:8px;padding:16px;text-align:center;background:#fafaf7;font-family:'IBM Plex Mono',monospace}
+.receipt .r-hosp{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--primary);letter-spacing:.03em}
+.receipt .r-sub{font-size:.68rem;color:var(--muted);margin-bottom:10px;font-family:'IBM Plex Sans',sans-serif}
+.receipt .r-div{border-top:1px dashed #ccc;margin:8px 0}
+.receipt .r-label{font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.receipt .r-num{font-size:2.6rem;font-weight:700;color:var(--primary);line-height:1;margin:6px 0;letter-spacing:.05em}
+.receipt .r-name{font-size:.95rem;font-weight:600;color:var(--text);font-family:'IBM Plex Sans',sans-serif}
+.receipt .r-age{font-size:.78rem;color:var(--muted);font-family:'IBM Plex Sans',sans-serif}
+.receipt .r-time{font-size:.7rem;color:var(--muted);font-family:'IBM Plex Sans',sans-serif}
+
+/* records table */
+.tbl-wrap{overflow-x:auto;margin-top:14px}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+th{background:var(--surface2);padding:9px 10px;text-align:left;font-weight:600;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;border-bottom:2px solid var(--border)}
+td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.token-badge{background:var(--primary);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:.75rem;font-weight:600;padding:3px 8px;border-radius:5px}
+.action-btns{display:flex;gap:6px}
+
+/* printer setup */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.mode-card{border:2px solid var(--border);border-radius:10px;padding:14px;text-align:center;cursor:pointer;transition:all .15s}
+.mode-card.active{border-color:var(--primary);background:#f0f6ff}
+.mode-card .mc-icon{font-size:1.8rem;margin-bottom:6px}
+.mode-card .mc-title{font-weight:600;font-size:.85rem;color:var(--primary)}
+.mode-card .mc-desc{font-size:.72rem;color:var(--muted);margin-top:3px}
+.setup-section{display:none}.setup-section.active{display:block}
+.status-bar{padding:10px 14px;border-radius:8px;font-size:.83rem;font-weight:500;margin-bottom:12px;background:var(--surface2);color:var(--muted)}
+.status-bar.ok{background:#e8f5ee;color:var(--success)}
+.status-bar.err{background:#fdecea;color:var(--danger)}
+.info-box{background:#f0f6ff;border-left:3px solid var(--primary);padding:12px 14px;border-radius:0 8px 8px 0;font-size:.8rem;line-height:1.7;color:var(--muted);margin-bottom:12px}
+.info-box strong{display:block;color:var(--primary);margin-bottom:4px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1;min-width:120px;justify-content:center}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:8px;font-size:.85rem;opacity:0;transition:all .3s;z-index:9999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* print area — hidden on screen, visible when printing */
+#print-area{display:none}
+@media print {
+  html,body{margin:0;padding:0;background:#fff}
+  body *{visibility:hidden}
+  #print-area,#print-area *{visibility:visible}
+  #print-area{
+    display:block !important;
+    position:absolute;
+    top:0;left:0;
+    width:72mm;
+    padding:2mm;
+    background:#fff;
+  }
+}
+@page{size:76mm auto;margin:0}
+</style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Delek Hospital</h2>
-    <div id="status" class="status">Printer: ⚪ Not Connected</div>
-    
-    <button class="btn-connect" onclick="connectUSB()">1. Pair USB Printer</button>
+<header>
+  <h1>Delek <span>Hospital</span></h1>
+  <div class="counter-badge" id="day-counter">Today: 0</div>
+</header>
 
-    <label>Patient Name</label>
-    <input type="text" id="pName" placeholder="Full Name">
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('issue')">Issue Token</button>
+  <button class="tab-btn" onclick="showTab('records')">Records</button>
+  <button class="tab-btn" onclick="showTab('reprint')">Reprint</button>
+  <button class="tab-btn" onclick="showTab('printer')">🖨️ Printer</button>
+</div>
 
-    <label>Age</label>
-    <input type="number" id="pAge" placeholder="Age">
-
-    <label>Nationality</label>
-    <select id="pNationality">
+<!-- ISSUE TOKEN -->
+<div class="panel active" id="tab-issue">
+  <div class="card">
+    <h2>New Patient Token</h2>
+    <div class="fg"><label>Patient Name <span style="color:var(--danger)">*</span></label><input id="inp-name" type="text" placeholder="Full name" autocomplete="off"></div>
+    <div class="fg"><label>Age <span style="color:var(--danger)">*</span></label><input id="inp-age" type="number" placeholder="Years" min="0" max="150"></div>
+    <div class="fg">
+      <label>Nationality <span style="color:var(--danger)">*</span></label>
+      <select id="inp-nat">
+        <option value="">— Select —</option>
         <option value="Tibetan">Tibetan</option>
         <option value="Indian">Indian</option>
         <option value="Other">Other</option>
-    </select>
-
-    <label>Phone (Optional)</label>
-    <input type="tel" id="pPhone" placeholder="Mobile Number">
-
-    <button class="btn-print" onclick="processNewToken()">Issue & Print Token</button>
-    <button class="btn-export" onclick="exportToCSV()">Export Data to CSV</button>
-
-    <div class="history-section">
-        <h3>Recent Tokens (Reprint)</h3>
-        <table id="historyTable">
-            <thead>
-                <tr>
-                    <th>No.</th>
-                    <th>Name</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+      </select>
     </div>
+    <div class="fg"><label>Phone <span style="font-size:.7rem;font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(optional)</span></label><input id="inp-phone" type="tel" placeholder="Mobile number"></div>
+    <button class="btn btn-primary btn-full" onclick="issueToken()">🎫 Issue Token &amp; Print</button>
+  </div>
 </div>
 
+<!-- RECORDS -->
+<div class="panel" id="tab-records">
+  <div style="max-width:800px;margin:0 auto">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <input style="flex:1;min-width:180px;padding:9px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:'IBM Plex Sans',sans-serif;font-size:.88rem" placeholder="Search by name or token…" oninput="renderTable(this.value)" id="search-input">
+      <button class="btn btn-accent btn-sm" onclick="exportCSV()">↓ CSV</button>
+      <button class="btn btn-accent btn-sm" onclick="exportExcel()">↓ Excel</button>
+      <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 Clear All</button>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Token</th><th>Name</th><th>Age</th><th>Nat.</th><th>Phone</th><th>Time</th><th></th></tr></thead>
+        <tbody id="tbl-body"></tbody>
+      </table>
+      <p id="no-records" style="text-align:center;padding:24px;color:var(--muted);font-size:.88rem">No records yet.</p>
+    </div>
+  </div>
+</div>
+
+<!-- REPRINT -->
+<div class="panel" id="tab-reprint">
+  <div class="card">
+    <h2>Reprint Token</h2>
+    <div class="fg"><label>Search patient or token number</label><input id="rp-search" type="text" placeholder="e.g. T-005 or patient name" oninput="renderReprint()"></div>
+    <div id="rp-results"></div>
+  </div>
+</div>
+
+<!-- PRINTER SETUP -->
+<div class="panel" id="tab-printer">
+  <div class="card" style="max-width:560px">
+    <h2 style="text-align:center">🖨️ Printer Setup</h2>
+
+    <div class="mode-grid">
+      <div class="mode-card active" id="mc-system" onclick="selectMode('system')">
+        <div class="mc-icon">🖨️</div>
+        <div class="mc-title">System Print</div>
+        <div class="mc-desc">Desktop USB via browser dialog</div>
+      </div>
+      <div class="mode-card" id="mc-bluetooth" onclick="selectMode('bluetooth')">
+        <div class="mc-icon">📶</div>
+        <div class="mc-title">Bluetooth</div>
+        <div class="mc-desc">Android phone → wireless printer</div>
+      </div>
+    </div>
+
+    <!-- System -->
+    <div class="setup-section active" id="sec-system">
+      <div class="info-box">
+        <strong>Desktop USB Setup</strong>
+        1. Connect 80mm thermal printer via USB and install its driver<br>
+        2. Set it as your default printer in Windows/Mac settings<br>
+        3. Issue a token — the browser print dialog will open<br>
+        4. Select your thermal printer and click <b>Print</b>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="testPrint()">🖨️ Test Print</button>
+    </div>
+
+    <!-- Bluetooth -->
+    <div class="setup-section" id="sec-bluetooth">
+      <div class="status-bar" id="bt-status">⚪ Not connected</div>
+      <div class="row">
+        <button class="btn btn-primary" id="bt-btn-connect" onclick="btConnect()">📶 Connect Printer</button>
+        <button class="btn btn-outline" onclick="btDisconnect()">Disconnect</button>
+      </div>
+      <div class="info-box" style="margin-top:14px">
+        <strong>Android Bluetooth Setup</strong>
+        1. Use <b>Google Chrome</b> on Android<br>
+        2. Make sure your thermal printer is powered on<br>
+        3. Tap <b>Connect Printer</b> and select your printer from the list<br>
+        4. Issue tokens — they print directly with no dialog
+      </div>
+      <button class="btn btn-accent btn-full" style="margin-top:6px" onclick="testPrint()">🖨️ Test Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOKEN MODAL -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <h3>Token Issued</h3>
+    <div class="receipt" id="modal-receipt"></div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" id="modal-print-btn" onclick="printCurrent()">🖨️ Print</button>
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden print area -->
+<div id="print-area"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
 <script>
-    let device;
-    let records = JSON.parse(localStorage.getItem('delek_db') || '[]');
+// ── State ──────────────────────────────────────────────────────
+let records      = JSON.parse(localStorage.getItem('dh_records') || '[]');
+let counter      = parseInt(localStorage.getItem('dh_counter')  || '0');
+let mode         = localStorage.getItem('dh_mode') || 'system';
+let currentRec   = null;
+let btDevice     = null;
+let btChar       = null;
 
-    // --- USB CONNECTION LOGIC ---
-    async function connectUSB() {
-        try {
-            // Requesting USB device access
-            device = await navigator.usb.requestDevice({ filters: [] }); 
-            await device.open();
-            
-            // Select configuration and claim interface (usually index 0 for printers)
-            if (device.configuration === null) await device.selectConfiguration(1);
-            await device.claimInterface(0); 
-            
-            document.getElementById('status').innerText = "Printer: 🟢 Ready (USB)";
-            document.getElementById('status').style.color = "green";
-        } catch (err) {
-            console.error(err);
-            alert("Failed to connect. Ensure the printer is ON and connected via USB.");
+// ── Init ───────────────────────────────────────────────────────
+function init() {
+  selectMode(mode, true);
+  renderTable('');
+  updateCounter();
+}
+
+// ── Tabs ───────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Mode ───────────────────────────────────────────────────────
+function selectMode(m, silent) {
+  mode = m;
+  localStorage.setItem('dh_mode', m);
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.setup-section').forEach(s => s.classList.remove('active'));
+  const card = document.getElementById('mc-' + m);
+  const sec  = document.getElementById('sec-' + m);
+  if (card) card.classList.add('active');
+  if (sec)  sec.classList.add('active');
+  // Update modal print button label
+  updatePrintBtn();
+  if (!silent) toast('Mode: ' + m);
+}
+
+function updatePrintBtn() {
+  const btn = document.getElementById('modal-print-btn');
+  if (!btn) return;
+  if (mode === 'bluetooth' && btChar) btn.textContent = '📶 Print via Bluetooth';
+  else if (mode === 'bluetooth')       btn.textContent = '📶 Print (connect first)';
+  else                                 btn.textContent = '🖨️ Print';
+}
+
+// ── Helpers ────────────────────────────────────────────────────
+function pad(n)  { return 'T-' + String(n).padStart(3, '0'); }
+function ts(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', {day:'2-digit',month:'short'}) + ' ' +
+         d.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit',hour12:true});
+}
+function save() {
+  localStorage.setItem('dh_records', JSON.stringify(records));
+  localStorage.setItem('dh_counter', String(counter));
+}
+function updateCounter() {
+  const today = new Date().toDateString();
+  const n = records.filter(r => new Date(r.ts).toDateString() === today).length;
+  document.getElementById('day-counter').textContent = 'Today: ' + n;
+}
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ── Issue Token ────────────────────────────────────────────────
+function issueToken() {
+  const name  = document.getElementById('inp-name').value.trim();
+  const age   = document.getElementById('inp-age').value.trim();
+  const nat   = document.getElementById('inp-nat').value;
+  const phone = document.getElementById('inp-phone').value.trim();
+
+  if (!name) { toast('⚠️ Enter patient name'); return; }
+  if (!age || isNaN(age) || age < 0 || age > 150) { toast('⚠️ Enter valid age'); return; }
+  if (!nat)  { toast('⚠️ Select nationality'); return; }
+
+  counter++;
+  const rec = { id: Date.now(), token: pad(counter), name, age, nat, phone, ts: new Date().toISOString() };
+  records.unshift(rec);
+  save();
+  renderTable('');
+  updateCounter();
+
+  // Clear form
+  document.getElementById('inp-name').value  = '';
+  document.getElementById('inp-age').value   = '';
+  document.getElementById('inp-nat').value   = '';
+  document.getElementById('inp-phone').value = '';
+
+  openModal(rec);
+}
+
+// ── Modal ──────────────────────────────────────────────────────
+function openModal(rec) {
+  currentRec = rec;
+  document.getElementById('modal-receipt').innerHTML = receiptHTML(rec);
+  updatePrintBtn();
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+function printCurrent() {
+  if (!currentRec) return;
+  doPrint(currentRec);
+  closeModal();
+}
+
+// ── Receipt HTML (screen preview) ─────────────────────────────
+function receiptHTML(rec) {
+  return `
+    <div class="r-hosp">DELEK HOSPITAL</div>
+    <div class="r-sub">Dharamshala, Himachal Pradesh</div>
+    <div class="r-div"></div>
+    <div class="r-label">Token Number</div>
+    <div class="r-num">${rec.token}</div>
+    <div class="r-div"></div>
+    <div class="r-name">${rec.name.toUpperCase()}</div>
+    <div class="r-age">Age: ${rec.age} years</div>
+    <div class="r-div"></div>
+    <div class="r-time">Issued: ${ts(rec.ts)}</div>`;
+}
+
+// ── Print Dispatcher ───────────────────────────────────────────
+async function doPrint(rec) {
+  if (mode === 'bluetooth') {
+    if (!btChar) {
+      toast('⚠️ Bluetooth printer not connected');
+      return;
+    }
+    await printBluetooth(rec);
+  } else {
+    printSystem(rec);
+  }
+}
+
+// ── System / Desktop Print ─────────────────────────────────────
+function printSystem(rec) {
+  const area = document.getElementById('print-area');
+  area.innerHTML = `
+    <div style="width:72mm;font-family:'Courier New',monospace;font-size:10.5pt;padding:2mm;text-align:center;background:#fff">
+      <div style="font-size:13pt;font-weight:bold;letter-spacing:.5px;margin-bottom:2px">DELEK HOSPITAL</div>
+      <div style="font-size:7.5pt;margin-bottom:6px">Dharamshala, Himachal Pradesh</div>
+      <div style="border-top:1px dashed #000;margin:6px 0"></div>
+      <div style="font-size:7pt;text-transform:uppercase;letter-spacing:2px;margin-bottom:2px">Token Number</div>
+      <div style="font-size:32pt;font-weight:bold;line-height:1;letter-spacing:3px;margin:4px 0">${rec.token}</div>
+      <div style="border-top:1px dashed #000;margin:6px 0"></div>
+      <div style="text-align:left;line-height:1.8;font-size:9.5pt">
+        <div>Patient : <b>${rec.name}</b></div>
+        <div>Age     : ${rec.age} years</div>
+      </div>
+      <div style="border-top:1px dashed #000;margin:6px 0"></div>
+      <div style="font-size:7.5pt;padding-bottom:4mm">Issued: ${ts(rec.ts)}</div>
+    </div>`;
+  area.style.display = 'block';
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { area.style.display = 'none'; }, 1500);
+  }, 80);
+}
+
+// ── ESC/POS builder (text only, no images) ────────────────────
+function buildESCPOS(rec) {
+  const ESC = 0x1B, GS = 0x1D, LF = 0x0A;
+  const e = s => [...new TextEncoder().encode(s + '\n')];
+  const LINE = e('--------------------------------');
+
+  return new Uint8Array([
+    ESC, 0x40,                         // reset
+    ESC, 0x61, 0x01,                   // centre
+    ESC, 0x45, 0x01,                   // bold on
+    ...e('DELEK HOSPITAL'),
+    ESC, 0x45, 0x00,                   // bold off
+    ...e('Dharamshala, Himachal Pradesh'),
+    ...LINE,
+    ...e('TOKEN NUMBER'),
+    ESC, 0x45, 0x01,
+    GS,  0x21, 0x11,                   // double width+height
+    ...e(rec.token),
+    GS,  0x21, 0x00,
+    ESC, 0x45, 0x00,
+    ...LINE,
+    ESC, 0x61, 0x00,                   // left
+    ...e('Patient : ' + rec.name),
+    ...e('Age     : ' + rec.age + ' years'),
+    ESC, 0x61, 0x01,                   // centre
+    ...LINE,
+    ...e('Issued: ' + ts(rec.ts)),
+    LF, LF, LF, LF,
+    GS,  0x56, 0x41, 0x10,             // partial cut with feed
+  ]);
+}
+
+// ── Bluetooth ──────────────────────────────────────────────────
+function setBtStatus(cls, msg) {
+  const el = document.getElementById('bt-status');
+  el.className = 'status-bar' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+}
+
+async function findChar(server) {
+  // Try known thermal printer service UUIDs first
+  const UUIDS = [
+    '000018f0-0000-1000-8000-00805f9b34fb',
+    '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+    '0000ff00-0000-1000-8000-00805f9b34fb',
+    '0000ffe0-0000-1000-8000-00805f9b34fb',
+  ];
+  for (const u of UUIDS) {
+    try {
+      const svc   = await server.getPrimaryService(u);
+      const chars = await svc.getCharacteristics();
+      for (const c of chars) {
+        if (c.properties.write || c.properties.writeWithoutResponse) return c;
+      }
+    } catch(e) {}
+  }
+  // Fallback: enumerate all
+  try {
+    for (const svc of await server.getPrimaryServices()) {
+      try {
+        for (const c of await svc.getCharacteristics()) {
+          if (c.properties.write || c.properties.writeWithoutResponse) return c;
         }
+      } catch(e) {}
     }
+  } catch(e) {}
+  return null;
+}
 
-    // --- PRINTING LOGIC ---
-    async function printData(data) {
-        if (!device) return alert("Please click 'Pair USB Printer' first!");
-
-        const encoder = new TextEncoder();
-        
-        // ESC/POS Formatting
-        const esc = {
-            init: '\x1B\x40',
-            center: '\x1B\x61\x01',
-            left: '\x1B\x61\x00',
-            boldOn: '\x1B\x45\x01',
-            boldOff: '\x1B\x45\x00',
-            sizeLarge: '\x1D\x21\x11',
-            sizeNormal: '\x1D\x21\x00',
-            feed: '\n\n\n\n\x1D\x56\x41\x03' // Feed and Cut
-        };
-
-        const content = 
-            esc.init + esc.center + 
-            "DELEK HOSPITAL\n" +
-            "------------------------------\n" +
-            esc.boldOn + esc.sizeLarge + "TOKEN: " + data.tokenNo + esc.sizeNormal + esc.boldOff + "\n" +
-            "------------------------------\n" +
-            esc.left + "Patient: " + data.name + "\n" +
-            "Age: " + data.age + "\n" +
-            "Date: " + data.timestamp + "\n" +
-            esc.center + "Please wait for your turn\n" +
-            esc.feed;
-
-        const dataBuffer = encoder.encode(content);
-        
-        // Find the OUT endpoint (usually index 1 or 2)
-        const endpoint = device.configuration.interfaces[0].alternate.endpoints.find(e => e.direction === 'out');
-        await device.transferOut(endpoint.endpointNumber, dataBuffer);
+async function btConnect() {
+  if (!navigator.bluetooth) {
+    setBtStatus('err', '❌ Web Bluetooth not supported — use Chrome on Android');
+    return;
+  }
+  try {
+    setBtStatus('', '🔵 Scanning for printers…');
+    btDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        '0000ff00-0000-1000-8000-00805f9b34fb',
+        '0000ffe0-0000-1000-8000-00805f9b34fb',
+      ]
+    });
+    setBtStatus('', '🔵 Connecting to ' + (btDevice.name || 'printer') + '…');
+    const server = await btDevice.gatt.connect();
+    btChar = await findChar(server);
+    if (btChar) {
+      setBtStatus('ok', '✅ Connected: ' + (btDevice.name || 'Printer'));
+      btDevice.addEventListener('gattserverdisconnected', () => {
+        btChar = null;
+        setBtStatus('', '⚪ Disconnected');
+        updatePrintBtn();
+      });
+      document.getElementById('bt-btn-connect').textContent = 'Reconnect';
+      updatePrintBtn();
+      toast('🖨️ Printer connected!');
+    } else {
+      setBtStatus('err', '⚠️ Connected but no writable characteristic found');
     }
+  } catch(e) {
+    setBtStatus('err', '❌ ' + e.message);
+  }
+}
 
-    // --- DATA HANDLING ---
-    function processNewToken() {
-        const name = document.getElementById('pName').value;
-        const age = document.getElementById('pAge').value;
-        const nationality = document.getElementById('pNationality').value;
-        const phone = document.getElementById('pPhone').value || "N/A";
+async function btDisconnect() {
+  try { if (btDevice && btDevice.gatt.connected) btDevice.gatt.disconnect(); } catch(e) {}
+  btChar = null; btDevice = null;
+  setBtStatus('', '⚪ Not connected');
+  updatePrintBtn();
+}
 
-        if(!name || !age) return alert("Fill required fields.");
-
-        const tokenNo = records.length + 1;
-        const timestamp = new Date().toLocaleString('en-IN');
-
-        const entry = { tokenNo, name, age, nationality, phone, timestamp };
-        records.push(entry);
-        localStorage.setItem('delek_db', JSON.stringify(records));
-
-        renderHistory();
-        printData(entry);
-        
-        // Clear inputs
-        document.getElementById('pName').value = "";
-        document.getElementById('pAge').value = "";
+// Core write: reconnect GATT fresh before every print to avoid Android BLE cache
+async function btGetFreshChar() {
+  if (!btDevice) throw new Error('No printer paired — connect first');
+  // Disconnect to flush Android BLE cache
+  try {
+    if (btDevice.gatt.connected) {
+      btDevice.gatt.disconnect();
+      await sleep(500);
     }
+  } catch(e) {}
+  // Reconnect (up to 3 attempts)
+  let server;
+  for (let i = 0; i < 3; i++) {
+    try { server = await btDevice.gatt.connect(); break; }
+    catch(e) { if (i === 2) throw e; await sleep(400); }
+  }
+  const c = await findChar(server);
+  if (!c) throw new Error('Printer characteristic not found after reconnect');
+  return c;
+}
 
-    function renderHistory() {
-        const tbody = document.querySelector('#historyTable tbody');
-        tbody.innerHTML = records.slice(-5).reverse().map(r => `
-            <tr>
-                <td>${r.tokenNo}</td>
-                <td>${r.name}</td>
-                <td><button class="btn-reprint" onclick="reprintToken(${r.tokenNo})">Reprint</button></td>
-            </tr>
-        `).join('');
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function printBluetooth(rec) {
+  setBtStatus('', '🔵 Preparing…');
+  try {
+    const char = await btGetFreshChar();
+    btChar = char;
+
+    const data      = buildESCPOS(rec);
+    const CHUNK     = 100;
+    const useNoResp = char.properties.writeWithoutResponse;
+
+    setBtStatus('', '🖨️ Printing…');
+    for (let i = 0; i < data.length; i += CHUNK) {
+      const chunk = data.slice(i, i + CHUNK);
+      try {
+        if (useNoResp) await char.writeValueWithoutResponse(chunk);
+        else           await char.writeValue(chunk);
+      } catch(e) {
+        await sleep(150);
+        if (useNoResp) await char.writeValueWithoutResponse(chunk);
+        else           await char.writeValue(chunk);
+      }
+      await sleep(40);
     }
+    await sleep(200);
+    setBtStatus('ok', '✅ Connected: ' + (btDevice.name || 'Printer'));
+    toast('✅ Token printed!');
+  } catch(e) {
+    setBtStatus('err', '❌ ' + e.message);
+    toast('⚠️ Print failed — reconnect in Printer tab');
+    btChar = null;
+  }
+}
 
-    function reprintToken(num) {
-        const data = records.find(r => r.tokenNo === num);
-        if(data) printData(data);
-    }
+// ── Test Print ─────────────────────────────────────────────────
+function testPrint() {
+  doPrint({ token:'T-000', name:'TEST PATIENT', age:'0', ts: new Date().toISOString() });
+}
 
-    function exportToCSV() {
-        let csv = "TokenNo,Name,Age,Nationality,Phone,Timestamp\n";
-        records.forEach(r => {
-            csv += `${r.tokenNo},"${r.name}",${r.age},${r.nationality},"${r.phone}","${r.timestamp}"\n`;
-        });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Delek_Records_${new Date().toLocaleDateString()}.csv`;
-        a.click();
-    }
+// ── Records Table ──────────────────────────────────────────────
+function renderTable(q) {
+  q = (q || '').toLowerCase();
+  const rows = records.filter(r =>
+    r.name.toLowerCase().includes(q) ||
+    r.token.toLowerCase().includes(q) ||
+    (r.phone && r.phone.includes(q))
+  );
+  const tbody = document.getElementById('tbl-body');
+  const none  = document.getElementById('no-records');
+  if (!rows.length) {
+    tbody.innerHTML = '';
+    none.style.display = 'block';
+  } else {
+    none.style.display = 'none';
+    tbody.innerHTML = rows.map(r => `
+      <tr>
+        <td><span class="token-badge">${r.token}</span></td>
+        <td><b>${r.name}</b></td>
+        <td>${r.age}</td>
+        <td>${r.nat}</td>
+        <td>${r.phone || '—'}</td>
+        <td style="font-size:.78rem;color:var(--muted)">${ts(r.ts)}</td>
+        <td><div class="action-btns">
+          <button class="btn btn-primary btn-sm" onclick="reprintId(${r.id})">🖨️</button>
+          <button class="btn btn-danger btn-sm"  onclick="delRecord(${r.id})">🗑</button>
+        </div></td>
+      </tr>`).join('');
+  }
+  updateCounter();
+}
 
-    renderHistory();
+function delRecord(id) {
+  if (!confirm('Delete this record?')) return;
+  records = records.filter(r => r.id !== id);
+  save(); renderTable(''); toast('Deleted');
+}
+
+// ── Reprint ────────────────────────────────────────────────────
+function renderReprint() {
+  const q   = document.getElementById('rp-search').value.toLowerCase();
+  const div = document.getElementById('rp-results');
+  if (!q) { div.innerHTML = ''; return; }
+  const hits = records.filter(r =>
+    r.name.toLowerCase().includes(q) || r.token.toLowerCase().includes(q)
+  ).slice(0, 6);
+  if (!hits.length) {
+    div.innerHTML = '<p style="text-align:center;color:var(--muted);padding:14px;font-size:.85rem">No match found</p>';
+    return;
+  }
+  div.innerHTML = hits.map(r => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:11px;border:1px solid var(--border);border-radius:8px;margin-top:8px;background:#fafaf7">
+      <div>
+        <div style="font-weight:600">${r.name}</div>
+        <div style="font-size:.75rem;color:var(--muted)">${r.token} · Age ${r.age} · ${ts(r.ts)}</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="reprintId(${r.id})">🖨️ Reprint</button>
+    </div>`).join('');
+}
+
+function reprintId(id) {
+  const rec = records.find(r => r.id === id);
+  if (rec) openModal(rec);
+}
+
+// ── Export ─────────────────────────────────────────────────────
+function exportCSV() {
+  if (!records.length) { toast('No records'); return; }
+  const header = ['Token','Name','Age','Nationality','Phone','Time'];
+  const rows   = records.map(r => [r.token, r.name, r.age, r.nat, r.phone||'', ts(r.ts)]);
+  const csv    = [header,...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  dl(new Blob([csv],{type:'text/csv'}), 'delek_tokens_' + today() + '.csv');
+  toast('📥 CSV exported');
+}
+function exportExcel() {
+  if (!records.length) { toast('No records'); return; }
+  const header = ['Token','Name','Age','Nationality','Phone','Time'];
+  const rows   = records.map(r => [r.token, r.name, r.age, r.nat, r.phone||'', ts(r.ts)]);
+  let t = '<table border="1">' + [header,...rows].map((r,i) =>
+    '<tr>' + r.map(v => i===0 ? `<th>${v}</th>` : `<td>${v}</td>`).join('') + '</tr>'
+  ).join('') + '</table>';
+  const full = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body>${t}</body></html>`;
+  dl(new Blob([full],{type:'application/vnd.ms-excel'}), 'delek_tokens_' + today() + '.xls');
+  toast('📥 Excel exported');
+}
+function dl(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function today() { return new Date().toISOString().slice(0,10); }
+
+function clearAll() {
+  if (!confirm('Clear ALL records? This cannot be undone.')) return;
+  records = []; counter = 0; save(); renderTable(''); toast('All records cleared');
+}
+
+// ── Boot ───────────────────────────────────────────────────────
+init();
 </script>
-
 </body>
 </html>
